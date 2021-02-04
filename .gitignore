@@ -1,0 +1,26 @@
+coverage/
+stats.json
+/dist/
+/deploy/build
+/deploy/netrc
+html_exports/
+/tmp
+/node_modules/
+.DS_Store
+/.gradle/
+
+/src/config.js
+
+/.sass-cache/
+
+# IntelliJ project files
+/.idea/
+*.iml
+
+# PS4 build artifacts
+/US0007*/
+LauncherApp/app/libs/
+
+# Fire TV / Android build artifacts
+/.gradle/
+/platforms/FireTV/.gradle/
