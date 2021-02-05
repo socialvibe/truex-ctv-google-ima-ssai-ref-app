@@ -4,8 +4,11 @@ import './video-controller.scss';
 import playSvg from '../assets/play-button.svg';
 import pauseSvg from '../assets/pause-button.svg';
 
-import { AdBreak}        from "./ad-break";
+import { AdBreak } from "./ad-break";
 import { InteractiveAd } from "./interactive-ad";
+
+const StreamEvent = google.ima.dai.api.StreamEvent;
+const StreamManager = google.ima.dai.api.StreamManager;
 
 export class VideoController {
     constructor(videoOwner, controlBarSelector, platform) {
@@ -16,6 +19,9 @@ export class VideoController {
             throw new Error('video owner not found: ' + videoOwner);
         }
         this.video = null;
+        this.adUI = null;
+        this.hlsController = null;
+        this.streamManager = null;
         this.videoStream = null;
 
         this.controlBarDiv = document.querySelector(controlBarSelector);
@@ -49,6 +55,7 @@ export class VideoController {
 
         this.onVideoTimeUpdate = this.onVideoTimeUpdate.bind(this);
         this.onVideoStarted = this.onVideoStarted.bind(this);
+        this.onStreamEvent = this.onStreamEvent.bind(this);
 
         this.closeVideoAction = function() {}; // override as needed
     }
@@ -86,6 +93,11 @@ export class VideoController {
     startVideo(videoStream, showControlBar) {
         this.stopOldVideo(videoStream);
 
+        console.log(`starting video: ${videoStream.title}`);
+
+        const initialVideoTime = Math.max(0, this.initialVideoTime || 0);
+        this.initialVideoTime = initialVideoTime;
+
         const isFirstStart = !!videoStream;
         if (videoStream) {
             this.videoStream = videoStream;
@@ -95,7 +107,8 @@ export class VideoController {
         if (!videoStream) return;
 
         if (isFirstStart) {
-            this.setAdPlaylist(videoStream.vmap);
+            // TODO
+            //this.setAdPlaylist(videoStream.vmap);
         }
 
         const firstAdBlock = this.adPlaylist[0];
@@ -110,34 +123,60 @@ export class VideoController {
         // Put the video underneath any control overlays.
         const video = document.createElement('video');
         this.video = video;
-        this.videoOwner.insertBefore(this.video, this.videoOwner.firstChild);
 
-        video.src = videoStream.url;
+        const overlay = this.videoOwner.firstChild;
+        this.videoOwner.insertBefore(this.video, overlay);
+
         video.addEventListener('playing', this.onVideoStarted);
         video.addEventListener("timeupdate", this.onVideoTimeUpdate);
 
-        const initialVideoTime = Math.max(0, this.initialVideoTime || 0);
-        this.initialVideoTime = initialVideoTime;
-        console.log(`starting video: ${videoStream.title} 
-    src: ${videoStream.url}
-    at time: ${this.timeDebugDisplay(initialVideoTime)}`);
+        const adUI = document.createElement('div');
+        adUI.classList.add('adUI');
+        this.adUI = adUI;
+        this.videoOwner.insertBefore(adUI, overlay);
 
-        this.videoStarted = false; // set to true on the first playing event
-        this.currVideoTime = initialVideoTime; // will be updated as video progresses
-        video.currentTime = initialVideoTime;
-        this.play();
+        this.hlsController = new Hls();
 
-        if (showControlBar) {
-            const forceTimer = true;
-            this.showControlBar(forceTimer);
-        } else {
-            this.hideControlBar();
-        }
+        this.streamManager = new StreamManager(video, adUI);
+        this.streamManager.addEventListener(
+            [
+                StreamEvent.Type.LOADED,
+                StreamEvent.Type.ERROR,
+                StreamEvent.Type.AD_BREAK_STARTED,
+                StreamEvent.Type.AD_BREAK_ENDED
+            ],
+            this.onStreamEvent, false);
+
+        // TODO: needed or not?
+        // Add metadata listener. Only used in LIVE streams. Timed metadata
+        // is handled differently by different video players, and the IMA SDK provides
+        // two ways to pass in metadata, StreamManager.processMetadata() and
+        // StreamManager.onTimedMetadata().
+        //
+        // Use StreamManager.onTimedMetadata() if your video player parses
+        // the metadata itself.
+        // Use StreamManager.processMetadata() if your video player provides raw
+        // ID3 tags, as with hls.js.
+        this.hlsController.on(Hls.Events.FRAG_PARSING_METADATA, (event, data) => {
+            if (this.streamManager && data) {
+                // For each ID3 tag in our metadata, we pass in the type - ID3, the
+                // tag data (a byte array), and the presentation timestamp (PTS).
+                data.samples.forEach(sample => {
+                    this.streamManager.processMetadata('ID3', sample.data, sample.pts);
+                });
+            }
+        });
+
+        const streamRequest = new google.ima.dai.api.VODStreamRequest();
+        streamRequest.contentSourceId = videoStream.google_content_id;
+        streamRequest.videoId = videoStream.google_video_id;
+        streamRequest.apiKey = null; // unused since stream is not encrypted
+        this.streamManager.requestStream(streamRequest);
     }
 
     stopOldVideo(newVideoStream) {
-        if (this.video && newVideoStream) {
-            if (this.videoStream === newVideoStream) {
+        if (this.video) {
+            if (newVideoStream && this.videoStream === newVideoStream) {
                 return; // already playing.
             } else {
                 // Stop the existing video. (Creating a new video instance is more reliable across
@@ -162,11 +201,68 @@ export class VideoController {
 
         video.src = ''; // ensure actual video is unloaded (needed for PS4).
 
-        video.parentNode.removeChild(video); // remove from the DOM
+        this.videoOwner.removeChild(video); // remove from the DOM
+        this.videoOwner.removeChild(this.adUI);
+        // TODO:
+        //this.hlsController.unloadVideoTBD();
+        //this.streamManager.stop();
 
         this.video = null;
+        this.adUI = null;
+        this.hlsController = null;
+        this.streamManager = null;
         this.seekTarget = undefined;
     }
+
+    /**
+     * Responds to a stream event.
+     * @param  {StreamEvent} e
+     */
+    onStreamEvent(e) {
+        switch (e.type) {
+            case StreamEvent.Type.LOADED:
+                console.log('Stream loaded');
+                this.startPlayback(e.getStreamData().url);
+                break;
+            case StreamEvent.Type.ERROR:
+                console.log('Error loading stream');
+                break;
+            case StreamEvent.Type.AD_BREAK_STARTED:
+                console.log('Ad Break Started');
+                this.hideControlBar();
+                this.adUI.style.display = 'block';
+                break;
+            case StreamEvent.Type.AD_BREAK_ENDED:
+                console.log('Ad Break Ended');
+                this.adUI.style.display = 'none';
+                break;
+            default:
+                break;
+        }
+    }
+
+    startPlayback(url) {
+        console.log('start playback at time ' + this.timeDebugDisplay(this.initialVideoTime) + ': ' + url);
+        const hls = this.hlsController;
+        hls.loadSource(url);
+        hls.attachMedia(this.video);
+        hls.on(Hls.Events.MANIFEST_PARSED, () => {
+            console.log('video manifest parsed');
+            this.videoStarted = false; // set to true on the first playing event
+            this.currVideoTime = this.initialVideoTime; // will be updated as video progresses
+            video.currentTime = this.initialVideoTime;
+            this.play();
+
+            if (showControlBar) {
+                const forceTimer = true;
+                this.showControlBar(forceTimer);
+            } else {
+                this.hideControlBar();
+            }
+            this.play();
+        });
+    }
+
 
     stopControlBarTimer() {
         if (this.controlBarTimer) {
@@ -198,7 +294,7 @@ export class VideoController {
         if (!this.video) return;
         if (this.debug) console.log(`play from: ${this.timeDebugDisplay(this.currVideoTime)}`);
         // Work around PS4 hangs by starting playback in a separate thread.
-        setTimeout( () => {
+        setTimeout(() => {
             if (!this.video) return; // video has been closed
             this.video.play();
         }, 10);
@@ -245,7 +341,7 @@ export class VideoController {
         // Skip over completed ads, but stop on uncompleted ones to force ad playback.
         if (currTime < newTarget) {
             // Seeking forward
-            for(var i in this.adPlaylist) {
+            for (var i in this.adPlaylist) {
                 const adBreak = this.adPlaylist[i];
                 if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
                 if (adBreak.endTime <= currTime) continue; // ignore past ads
@@ -261,7 +357,7 @@ export class VideoController {
             }
         } else {
             // Seeking backwards
-            for(var i = this.adPlaylist.length-1; i >= 0; i--) {
+            for (var i = this.adPlaylist.length - 1; i >= 0; i--) {
                 const adBreak = this.adPlaylist[i];
                 if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
                 if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
@@ -322,7 +418,7 @@ export class VideoController {
             console.log(`ad break skipped: ${adBreak.id} to: ${this.timeDebugDisplay(adBreak.endTime)}`);
 
             // skip a little past the end to avoid a flash of the final ad frame
-            this.seekTo(adBreak.endTime+1, this.isControlBarVisible);
+            this.seekTo(adBreak.endTime + 1, this.isControlBarVisible);
         }
     }
 
@@ -418,7 +514,7 @@ export class VideoController {
 
     getAdBreakAt(rawVideoTime) {
         if (rawVideoTime === undefined) rawVideoTime = this.currVideoTime;
-        for(var index in this.adPlaylist) {
+        for (var index in this.adPlaylist) {
             const adBreak = this.adPlaylist[index];
             if (adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
                 return adBreak;
@@ -430,7 +526,7 @@ export class VideoController {
     // We assume ad videos are stitched into the main video.
     getPlayingVideoTimeAt(rawVideoTime, skipAds) {
         let result = rawVideoTime;
-        for(var index in this.adPlaylist) {
+        for (var index in this.adPlaylist) {
             const adBreak = this.adPlaylist[index];
             if (rawVideoTime < adBreak.startTime) break; // future ads don't affect things
             if (!skipAds && adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
