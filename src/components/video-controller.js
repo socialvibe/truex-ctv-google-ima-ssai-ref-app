@@ -20,7 +20,7 @@ export class VideoController {
         }
         this.video = null;
         this.adUI = null;
-        this.hlsController = null;
+        this.hlsController = new Hls();
         this.streamManager = null;
         this.videoStream = null;
 
@@ -139,15 +139,16 @@ export class VideoController {
         //TODO
         //this.videoOwner.insertBefore(adUI, overlay);
 
-        this.hlsController = new Hls();
-
         this.streamManager = new StreamManager(video, adUI);
         this.streamManager.addEventListener(
             [
+                StreamEvent.Type.STREAM_INITIALIZED,
                 StreamEvent.Type.LOADED,
                 StreamEvent.Type.ERROR,
+                StreamEvent.Type.AD_PERIOD_STARTED,
+                StreamEvent.Type.AD_PERIOD_ENDED,
                 StreamEvent.Type.AD_BREAK_STARTED,
-                StreamEvent.Type.AD_BREAK_ENDED
+                StreamEvent.Type.AD_BREAK_ENDED,
             ],
             this.onStreamEvent, false);
 
@@ -200,20 +201,19 @@ export class VideoController {
 
         this.pause();
 
+        this.hlsController.detachMedia();
         video.removeEventListener('timeupdate', this.onVideoTimeUpdate);
         video.removeEventListener('playing', this.onVideoStarted);
 
         video.src = ''; // ensure actual video is unloaded (needed for PS4).
 
         this.videoOwner.removeChild(video); // remove from the DOM
-        this.videoOwner.removeChild(this.adUI);
         // TODO:
-        //this.hlsController.unloadVideoTBD();
+        // this.videoOwner.removeChild(this.adUI);
+        // this.adUI = null;
         //this.streamManager.stop();
 
         this.video = null;
-        this.adUI = null;
-        this.hlsController = null;
         this.streamManager = null;
         this.seekTarget = undefined;
     }
@@ -224,12 +224,23 @@ export class VideoController {
      */
     onStreamEvent(e) {
         switch (e.type) {
+            case StreamEvent.Type.STREAM_INITIALIZED:
+                console.log('Stream Initialized');
+                break;
             case StreamEvent.Type.LOADED:
                 console.log('Stream loaded');
-                this.startPlayback(e.getStreamData().url);
+                const streamData = e.getStreamData();
+                this.startPlayback(streamData.url);
                 break;
             case StreamEvent.Type.ERROR:
                 console.log('Error loading stream');
+                break;
+            case StreamEvent.Type.AD_PERIOD_STARTED:
+                const ad = e.getAd();
+                console.log('Ad Period Started');
+                break;
+            case StreamEvent.Type.AD_PERIOD_ENDED:
+                console.log('Ad Period Ended');
                 break;
             case StreamEvent.Type.AD_BREAK_STARTED:
                 console.log('Ad Break Started');
