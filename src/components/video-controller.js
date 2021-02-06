@@ -26,6 +26,7 @@ export class VideoController {
 
         this.controlBarDiv = document.querySelector(controlBarSelector);
         this.isControlBarVisible = false;
+        this.showControlBarInitially = false;
 
         this.adIndicator = document.querySelector('.ad-indicator');
 
@@ -46,6 +47,7 @@ export class VideoController {
         this.initialVideoTime = 0;
         this.currVideoTime = -1;
         this.seekTarget = undefined;
+        this.isInAdBreak = false;
 
         this.adPlaylist = [];
 
@@ -94,6 +96,7 @@ export class VideoController {
         this.stopOldVideo(videoStream);
 
         console.log(`starting video: ${videoStream.title}`);
+        this.showControlBarInitially = showControlBar || false;
 
         const initialVideoTime = Math.max(0, this.initialVideoTime || 0);
         this.initialVideoTime = initialVideoTime;
@@ -133,7 +136,8 @@ export class VideoController {
         const adUI = document.createElement('div');
         adUI.classList.add('adUI');
         this.adUI = adUI;
-        this.videoOwner.insertBefore(adUI, overlay);
+        //TODO
+        //this.videoOwner.insertBefore(adUI, overlay);
 
         this.hlsController = new Hls();
 
@@ -230,11 +234,15 @@ export class VideoController {
             case StreamEvent.Type.AD_BREAK_STARTED:
                 console.log('Ad Break Started');
                 this.hideControlBar();
+                this.isInAdBreak = true;
                 this.adUI.style.display = 'block';
+                this.refresh();
                 break;
             case StreamEvent.Type.AD_BREAK_ENDED:
                 console.log('Ad Break Ended');
+                this.isInAdBreak = false;
                 this.adUI.style.display = 'none';
+                this.refresh();
                 break;
             default:
                 break;
@@ -250,10 +258,9 @@ export class VideoController {
             console.log('video manifest parsed');
             this.videoStarted = false; // set to true on the first playing event
             this.currVideoTime = this.initialVideoTime; // will be updated as video progresses
-            video.currentTime = this.initialVideoTime;
-            this.play();
-
-            if (showControlBar) {
+            this.video.currentTime = this.initialVideoTime;
+            this.refresh();
+            if (this.showControlBarInitially) {
                 const forceTimer = true;
                 this.showControlBar(forceTimer);
             } else {
@@ -319,7 +326,7 @@ export class VideoController {
 
         const currTime = this.currVideoTime;
 
-        if (this.hasAdBreakAt(currTime)) {
+        if (this.isInAdBreak || this.hasAdBreakAt(currTime)) {
             // Don't allow user seeking during ad playback
             // Just show the control bar so the user can see the timeline.
             this.showControlBar();
@@ -557,7 +564,7 @@ export class VideoController {
     refresh() {
         const currTime = this.currVideoTime;
 
-        const isAtAd = this.hasAdBreakAt(currTime);
+        const isAtAd = this.isInAdBreak || this.hasAdBreakAt(currTime);
         if (isAtAd) {
             this.adIndicator.classList.add('show');
         } else {
