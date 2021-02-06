@@ -149,6 +149,7 @@ export class VideoController {
                 StreamEvent.Type.AD_PERIOD_ENDED,
                 StreamEvent.Type.AD_BREAK_STARTED,
                 StreamEvent.Type.AD_BREAK_ENDED,
+                StreamEvent.Type.AD_PROGRESS
             ],
             this.onStreamEvent, false);
 
@@ -211,7 +212,8 @@ export class VideoController {
         // TODO:
         // this.videoOwner.removeChild(this.adUI);
         // this.adUI = null;
-        //this.streamManager.stop();
+
+        this.streamManager.reset();
 
         this.video = null;
         this.streamManager = null;
@@ -223,20 +225,19 @@ export class VideoController {
      * @param  {StreamEvent} e
      */
     onStreamEvent(e) {
+        const streamData = e.getStreamData();
         switch (e.type) {
             case StreamEvent.Type.STREAM_INITIALIZED:
                 console.log('Stream Initialized');
                 break;
             case StreamEvent.Type.LOADED:
                 console.log('Stream loaded');
-                const streamData = e.getStreamData();
                 this.startPlayback(streamData.url);
                 break;
             case StreamEvent.Type.ERROR:
                 console.log('Error loading stream');
                 break;
             case StreamEvent.Type.AD_PERIOD_STARTED:
-                const ad = e.getAd();
                 console.log('Ad Period Started');
                 break;
             case StreamEvent.Type.AD_PERIOD_ENDED:
@@ -253,6 +254,12 @@ export class VideoController {
                 console.log('Ad Break Ended');
                 this.isInAdBreak = false;
                 this.adUI.style.display = 'none';
+                this.refresh();
+                break;
+            case StreamEvent.Type.AD_PROGRESS:
+                const adProgress = streamData.adProgressData;
+                const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
+                console.log('Ad Progress: dur: ' + adProgress.duration + ' remaining: ' + timeRemaining);
                 this.refresh();
                 break;
             default:
