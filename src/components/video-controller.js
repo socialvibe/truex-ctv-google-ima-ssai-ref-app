@@ -469,7 +469,8 @@ export class VideoController {
 
         // ensure main video is logically at the fallback videos for when it resumes
         // We just need to skip over the placeholder video of this interactive ad wrapper.
-        this.initialVideoTime = adBreak.startTime + googleAd.getDuration();
+        adBreak.placeHolderDuration = googleAd.getDuration();
+        this.initialVideoTime = adBreak.fallbackStartTime;
 
         var vastConfigUrl = googleAd.getDescription();
         // Work around bad placement for now
@@ -485,8 +486,7 @@ export class VideoController {
         if (this.videoStarted) return;
         this.videoStarted = true;
 
-        console.log('video playback started: ' + this.timeDebugDisplay(this.initialVideoTime)
-        + ' vs ' + this.timeDebugDisplay(this.video.currentTime));
+        console.log('video playback started: ' + this.timeDebugDisplay(this.initialVideoTime));
 
         if (this.initialVideoTime > 0) {
             // Ensure we are at the desired initial position.
@@ -503,7 +503,7 @@ export class VideoController {
         if (!this.videoStarted) return;
 
         const newTime = Math.floor(this.video.currentTime);
-        console.log('video time: ' + this.timeDebugDisplay(newTime));
+        //console.log('video time: ' + this.timeDebugDisplay(newTime));
 
         const currTime = this.currVideoTime;
         if (newTime == currTime) return;
@@ -564,9 +564,15 @@ export class VideoController {
         for (var index in this.adBreaks) {
             const adBreak = this.adBreaks[index];
             if (rawVideoTime < adBreak.startTime) break; // future ads don't affect things
-            if (!skipAds && adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
-                // We are within the ad, show the ad time.
-                return rawVideoTime - adBreak.startTime;
+            if (adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
+                const fallbackStart = adBreak.fallbackStartTime;
+                if (!skipAds && rawVideoTime >= fallbackStart) {
+                    // We are within the fallback ads, show time position withing the ad.
+                    return rawVideoTime - fallbackStart;
+                } else {
+                    // Just show the start of the ad break.
+                    return adBreak.startTime;
+                }
             } else if (adBreak.endTime <= rawVideoTime) {
                 // Discount the ad duration.
                 result -= adBreak.duration;
@@ -578,7 +584,7 @@ export class VideoController {
     getPlayingVideoDurationAt(rawVideoTime) {
         const adBreak = this.getAdBreakAt(rawVideoTime);
         if (adBreak) {
-            return adBreak.duration;
+            return adBreak.fallbackDuration;
         }
         const duration = this.video && this.video.duration || 0;
         return this.getPlayingVideoTimeAt(duration);
@@ -586,7 +592,14 @@ export class VideoController {
 
     timeDebugDisplay(rawVideoTime) {
         const displayTime = this.getPlayingVideoTimeAt(rawVideoTime, true);
-        return `${timeLabel(displayTime)} (raw: ${timeLabel(rawVideoTime)})`;
+        var result = timeLabel(displayTime);
+        const adBreak = this.getAdBreakAt(rawVideoTime);
+        if (adBreak) {
+            const adTime = this.getPlayingVideoTimeAt(rawVideoTime, false);
+            result += ' (adBreak ' + adBreak.index + ' ' + timeLabel(adTime) + ')';
+        }
+        result += ' (raw: ' + timeLabel(rawVideoTime) + ')'
+        return result;
     }
 
     refresh() {

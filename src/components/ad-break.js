@@ -8,8 +8,22 @@ export class AdBreak {
         this.index = index;
         this.startTime = cuePoint.start;
         this.endTime = cuePoint.end;
-        this.duration = cuePoint.end - cuePoint.start;
         this.started = false;
         this.completed = false;
+
+        // The length of the truex placeholder video.
+        this.placeHolderDuration = 0;
+    }
+
+    get duration() {
+        return this.endTime - this.startTime;
+    }
+
+    get fallbackStartTime() {
+        return this.startTime + this.placeHolderDuration;
+    }
+
+    get fallbackDuration() {
+        return this.duration - this.placeHolderDuration;
     }
 }
