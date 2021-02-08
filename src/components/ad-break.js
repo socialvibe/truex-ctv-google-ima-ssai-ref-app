@@ -4,7 +4,8 @@
  * over top of the main video when the ad break is encountered during playback.
  */
 export class AdBreak {
-    constructor(cuePoint) {
+    constructor(cuePoint, index) {
+        this.index = index;
         this.startTime = cuePoint.start;
         this.endTime = cuePoint.end;
         this.duration = cuePoint.end - cuePoint.start;
