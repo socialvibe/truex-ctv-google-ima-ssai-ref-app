@@ -6,7 +6,7 @@ const optOutAdvertisingId = uuid.v4();
 
 // Exercises the True[X] Ad Renderer for interactive ads.
 export class InteractiveAd {
-    constructor(adBreak, videoController) {
+    constructor(vastConfigUrl, adBreak, videoController) {
         let adFreePod = false;
         let adOverlay;
         let tar;
@@ -27,7 +27,7 @@ export class InteractiveAd {
                     supportsUserCancelStream: true // i.e. user backing out of an ad will cancel the entire video
                 };
 
-                tar = new TruexAdRenderer(adBreak.vastUrl, options);
+                tar = new TruexAdRenderer(vastConfigUrl, options);
                 tar.subscribe(handleAdEvent);
 
                 return tar.init()

@@ -48,8 +48,8 @@ export class VideoController {
         this.currVideoTime = -1;
         this.seekTarget = undefined;
         this.isInAdBreak = false;
-
         this.adBreaks = [];
+        this.currentAd = null;
 
         this.platform = platform || new TXMPlatform();
 
@@ -233,6 +233,7 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.STARTED:
+                this.startAd(ad);
                 break;
 
             case StreamEvent.Type.AD_PERIOD_STARTED:
@@ -442,8 +443,24 @@ export class VideoController {
         }
     }
 
-    startAd(adBreak) {
-        if (adBreak.started || adBreak.completed) return false;
+    startAd(googleAd) {
+        this.currentAd = googleAd;
+
+        const podInfo = googleAd.getAdPodInfo();
+        const adBreak = this.adBreaks[podInfo.getPodIndex()];
+        if (!adBreak) return;
+        if (googleAd.getAdSystem() != 'trueX') return; // ignore non-trueX ads
+
+        // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
+        // the remaining ones are the fallback ad videos.
+        const adPosition = podInfo.getAdPosition();
+        if (adPosition != 1) return;
+
+        if (adBreak.started || adBreak.completed) {
+            this.skipAd(adBreak);
+            return;
+        }
+
         adBreak.started = true;
         console.log(`ad started: ${adBreak.id} at: ${this.timeDebugDisplay(adBreak.startTime)}`);
 
@@ -452,10 +469,14 @@ export class VideoController {
 
         this.stopVideo(); // avoid multiple videos, e.g. for platforms like the PS4
 
-        // ensure main video is logically at the ad start for when it resumes
-        this.initialVideoTime = adBreak.startTime;
+        // ensure main video is logically at the fallback videos for when it resumes
+        // We just need to skip over the placeholder video of this interactive ad wrapper.
+        this.initialVideoTime = adBreak.startTime + googleAd.getDuration();
 
-        const ad = new InteractiveAd(adBreak, this);
+        var vastConfigUrl = googleAd.getDescription();
+        // Work around bad placement for now
+        vastConfigUrl = "https://qa-get.truex.com/22105de992284775a56f28ca6dac16c667e73cd0/vast/config?dimension_1=sample-video&dimension_2=0&dimension_3=sample-video&dimension_4=1234&dimension_5=evergreen&stream_position=preroll";
+        const ad = new InteractiveAd(vastConfigUrl, adBreak, this);
         setTimeout(() => ad.start(), 1); // show the ad "later" to work around hangs/crashes on the PS4
 
         return true; // ad started
@@ -495,7 +516,7 @@ export class VideoController {
                     return;
                 }
             } else if (!adBreak.started) {
-                this.startAd(adBreak);
+                // We will get ad events when the ad is encountered
 
             } else if (Math.abs(adBreak.endTime - newTime) <= 1) {
                 // The user has viewed the whole ad.
