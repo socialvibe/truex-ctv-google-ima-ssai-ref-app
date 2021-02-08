@@ -49,7 +49,7 @@ export class VideoController {
         this.seekTarget = undefined;
         this.isInAdBreak = false;
 
-        this.adPlaylist = [];
+        this.adBreaks = [];
 
         this.platform = platform || new TXMPlatform();
 
@@ -95,31 +95,18 @@ export class VideoController {
     startVideo(videoStream, showControlBar) {
         this.stopOldVideo(videoStream);
 
-        console.log(`starting video: ${videoStream.title}`);
         this.showControlBarInitially = showControlBar || false;
 
         const initialVideoTime = Math.max(0, this.initialVideoTime || 0);
         this.initialVideoTime = initialVideoTime;
 
-        const isFirstStart = !!videoStream;
         if (videoStream) {
             this.videoStream = videoStream;
         } else {
             videoStream = this.videoStream;
         }
         if (!videoStream) return;
-
-        if (isFirstStart) {
-            // TODO
-            //this.setAdPlaylist(videoStream.vmap);
-        }
-
-        const firstAdBlock = this.adPlaylist[0];
-        if (firstAdBlock && firstAdBlock.startTime <= 0) {
-            // If we have a preroll, show it immediately, since otherwise it takes a while for the video to load
-            const started = this.startAd(firstAdBlock);
-            if (started) return;
-        }
+        console.log(`starting video: ${videoStream.title}`);
 
         this.showLoadingSpinner(true);
 
@@ -133,10 +120,10 @@ export class VideoController {
         video.addEventListener('playing', this.onVideoStarted);
         video.addEventListener("timeupdate", this.onVideoTimeUpdate);
 
+        // We are showing our own Ad UI, so just pass in a disconnected place holder to keep the manager happy.
         const adUI = document.createElement('div');
         adUI.classList.add('adUI');
         this.adUI = adUI;
-        //TODO
         //this.videoOwner.insertBefore(adUI, overlay);
 
         this.streamManager = new StreamManager(video, adUI);
@@ -145,6 +132,8 @@ export class VideoController {
                 StreamEvent.Type.STREAM_INITIALIZED,
                 StreamEvent.Type.LOADED,
                 StreamEvent.Type.ERROR,
+                StreamEvent.Type.CUEPOINTS_CHANGED,
+                StreamEvent.Type.STARTED,
                 StreamEvent.Type.AD_PERIOD_STARTED,
                 StreamEvent.Type.AD_PERIOD_ENDED,
                 StreamEvent.Type.AD_BREAK_STARTED,
@@ -226,32 +215,38 @@ export class VideoController {
      */
     onStreamEvent(e) {
         const streamData = e.getStreamData();
+        const ad = e.getAd();
+        console.log('stream event: ' + e.type);
         switch (e.type) {
             case StreamEvent.Type.STREAM_INITIALIZED:
-                console.log('Stream Initialized');
                 break;
+            case StreamEvent.Type.CUEPOINTS_CHANGED:
+                this.setAdBreaks(streamData.cuepoints);
+                this.streamManager.removeEventListener(StreamEvent.Type.CUEPOINTS_CHANGED, this.onStreamEvent);
+                this.refresh();
+                break;
+
             case StreamEvent.Type.LOADED:
-                console.log('Stream loaded');
                 this.startPlayback(streamData.url);
                 break;
             case StreamEvent.Type.ERROR:
-                console.log('Error loading stream');
                 break;
+
+            case StreamEvent.Type.STARTED:
+                break;
+
             case StreamEvent.Type.AD_PERIOD_STARTED:
-                console.log('Ad Period Started');
                 break;
             case StreamEvent.Type.AD_PERIOD_ENDED:
-                console.log('Ad Period Ended');
                 break;
+
             case StreamEvent.Type.AD_BREAK_STARTED:
-                console.log('Ad Break Started');
                 this.hideControlBar();
                 this.isInAdBreak = true;
                 this.adUI.style.display = 'block';
                 this.refresh();
                 break;
             case StreamEvent.Type.AD_BREAK_ENDED:
-                console.log('Ad Break Ended');
                 this.isInAdBreak = false;
                 this.adUI.style.display = 'none';
                 this.refresh();
@@ -366,8 +361,8 @@ export class VideoController {
         // Skip over completed ads, but stop on uncompleted ones to force ad playback.
         if (currTime < newTarget) {
             // Seeking forward
-            for (var i in this.adPlaylist) {
-                const adBreak = this.adPlaylist[i];
+            for (var i in this.adBreaks) {
+                const adBreak = this.adBreaks[i];
                 if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
                 if (adBreak.endTime <= currTime) continue; // ignore past ads
 
@@ -376,14 +371,14 @@ export class VideoController {
                     newTarget += adBreak.duration;
                 } else {
                     // Play the ad instead of stepping over it.
-                    this.startAd(adBreak);
-                    return;
+                    newTarget = adBreak.startTime;
+                    break;
                 }
             }
         } else {
             // Seeking backwards
-            for (var i = this.adPlaylist.length - 1; i >= 0; i--) {
-                const adBreak = this.adPlaylist[i];
+            for (var i = this.adBreaks.length - 1; i >= 0; i--) {
+                const adBreak = this.adBreaks[i];
                 if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
                 if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
 
@@ -392,8 +387,8 @@ export class VideoController {
                     newTarget -= adBreak.duration;
                 } else {
                     // Play the ad instead of stepping over it.
-                    this.startAd(adBreak);
-                    return;
+                    newTarget = adBreak.startTime;
+                    break;
                 }
             }
         }
@@ -414,7 +409,7 @@ export class VideoController {
         const maxTarget = duration > 0 ? duration : newTarget;
 
         // Don't allow seeking back to the preroll.
-        const firstAdBlock = this.adPlaylist[0];
+        const firstAdBlock = this.adBreaks[0];
         const minTarget = firstAdBlock && firstAdBlock.startTime <= 0 ? firstAdBlock.duration : 0;
 
         this.seekTarget = Math.max(minTarget, Math.min(newTarget, maxTarget));
@@ -512,24 +507,14 @@ export class VideoController {
         this.refresh();
     }
 
-    setAdPlaylist(vmap) {
+    setAdBreaks(cuePoints) {
         this.refreshAdMarkers = true;
         const childNodes = this.adMarkersDiv.children;
         for (let i = childNodes.length - 1; i >= 0; i--) {
             this.adMarkersDiv.removeChild(childNodes[i]);
         }
 
-        this.adPlaylist = vmap.map(vmapJson => {
-            return new AdBreak(vmapJson);
-        });
-
-        // Correct ad display times into raw video times for the actual time in the overall video.
-        let totalAdsDuration = 0;
-        this.adPlaylist.forEach(adBreak => {
-            adBreak.startTime = adBreak.displayTimeOffset + totalAdsDuration;
-            adBreak.endTime = adBreak.startTime + adBreak.duration;
-            totalAdsDuration += adBreak.duration;
-        });
+        this.adBreaks = cuePoints.map(cue => new AdBreak(cue));
     }
 
     hasAdBreakAt(rawVideoTime) {
@@ -539,8 +524,8 @@ export class VideoController {
 
     getAdBreakAt(rawVideoTime) {
         if (rawVideoTime === undefined) rawVideoTime = this.currVideoTime;
-        for (var index in this.adPlaylist) {
-            const adBreak = this.adPlaylist[index];
+        for (var index in this.adBreaks) {
+            const adBreak = this.adBreaks[index];
             if (adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
                 return adBreak;
             }
@@ -551,8 +536,8 @@ export class VideoController {
     // We assume ad videos are stitched into the main video.
     getPlayingVideoTimeAt(rawVideoTime, skipAds) {
         let result = rawVideoTime;
-        for (var index in this.adPlaylist) {
-            const adBreak = this.adPlaylist[index];
+        for (var index in this.adBreaks) {
+            const adBreak = this.adBreaks[index];
             if (rawVideoTime < adBreak.startTime) break; // future ads don't affect things
             if (!skipAds && adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
                 // We are within the ad, show the ad time.
@@ -640,7 +625,7 @@ export class VideoController {
         } else {
             if (this.refreshAdMarkers && durationToDisplay > 0) {
                 this.refreshAdMarkers = false;
-                this.adPlaylist.forEach(adBreak => {
+                this.adBreaks.forEach(adBreak => {
                     const marker = document.createElement('div');
                     marker.classList.add('ad-break');
                     const skipAds = true;
