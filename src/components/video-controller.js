@@ -19,7 +19,6 @@ export class VideoController {
             throw new Error('video owner not found: ' + videoOwner);
         }
         this.video = null;
-        this.adUI = null;
         this.hlsController = null;
         this.streamManager = null;
         this.videoStream = null;
@@ -121,10 +120,6 @@ export class VideoController {
 
         // We are showing our own Ad UI, so just pass in a disconnected place holder to keep the manager happy.
         const adUI = document.createElement('div');
-        adUI.classList.add('adUI');
-        this.adUI = adUI;
-        //this.videoOwner.insertBefore(adUI, overlay);
-
         this.streamManager = new StreamManager(video, adUI);
 
         var streamEvents;
@@ -189,9 +184,6 @@ export class VideoController {
         video.src = ''; // ensure actual video is unloaded (needed for PS4).
 
         this.videoOwner.removeChild(video); // remove from the DOM
-        // TODO:
-        // this.videoOwner.removeChild(this.adUI);
-        // this.adUI = null;
 
         this.streamManager.reset();
 
@@ -234,13 +226,14 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.AD_BREAK_STARTED:
-                this.hideControlBar();
-                this.adUI.style.display = 'block';
-                this.refresh();
+                // We don't strictly need to know these events since we monitor video time updates anyway.
+                // this.hideControlBar();
+                // this.adUI.style.display = 'block';
+                // this.refresh();
                 break;
             case StreamEvent.Type.AD_BREAK_ENDED:
-                this.adUI.style.display = 'none';
-                this.refresh();
+                // this.adUI.style.display = 'none';
+                // this.refresh();
                 break;
 
             case StreamEvent.Type.AD_PROGRESS:
