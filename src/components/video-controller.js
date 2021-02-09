@@ -486,7 +486,7 @@ export class VideoController {
         if (!this.video) return;
         if (!this.videoStarted) return;
 
-        const newTime = Math.floor(this.video.currentTime);
+        const newTime = this.video.currentTime;
         if (this.debug) console.log('video time: ' + this.timeDebugDisplay(newTime));
 
         const currTime = this.currVideoTime;
@@ -666,6 +666,7 @@ export class VideoController {
 }
 
 function timeLabel(time) {
+    time = Math.round(time);
     const seconds = time % 60;
     time /= 60;
     const minutes = time % 60;
