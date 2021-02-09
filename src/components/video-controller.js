@@ -449,7 +449,7 @@ export class VideoController {
         }
 
         adBreak.started = true;
-        console.log(`truex ad started at: ${this.timeDebugDisplay(adBreak.startTime)}:\n${vastConfigUrl}`);
+        console.log(`truex ad started at ${this.timeDebugDisplay(adBreak.startTime)}:\n${vastConfigUrl}`);
 
         // Start an interactive ad.
         this.hideControlBar();
@@ -593,7 +593,7 @@ export class VideoController {
             const adTime = this.getPlayingVideoTimeAt(rawVideoTime, false);
             result += ' (adBreak ' + adBreak.index + ' ' + timeLabel(adTime) + ')';
         }
-        result += ' (raw: ' + timeLabel(rawVideoTime) + ')'
+        result += ' (raw ' + timeLabel(rawVideoTime) + ')'
         return result;
     }
 
