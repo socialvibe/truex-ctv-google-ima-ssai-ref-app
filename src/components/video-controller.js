@@ -620,7 +620,6 @@ export class VideoController {
         }
 
         const durationToDisplay = this.getPlayingVideoDurationAt(currTime);
-        console.log('refresh: duration display: ' + timeLabel(durationToDisplay));
 
         function percentage(time) {
             const result = durationToDisplay > 0 ? (time / durationToDisplay) * 100 : 0;
