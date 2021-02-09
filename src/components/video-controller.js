@@ -456,8 +456,11 @@ export class VideoController {
         this.initialVideoTime = adBreak.fallbackStartTime;
 
         var vastConfigUrl = googleAd.getDescription();
-        // Work around bad placement for now
-        vastConfigUrl = "https://qa-get.truex.com/22105de992284775a56f28ca6dac16c667e73cd0/vast/config?dimension_1=sample-video&dimension_2=0&dimension_3=sample-video&dimension_4=1234&dimension_5=evergreen&stream_position=preroll";
+        vastConfigUrl = vastConfigUrl.trim();
+        if (!vastConfigUrl.startsWith('http')) {
+            vastConfigUrl = 'https://' + vastConfigUrl;
+        }
+        console.log('loading truex ad: ' + vastConfigUrl);
         const ad = new InteractiveAd(vastConfigUrl, adBreak, this);
         setTimeout(() => ad.start(), 1); // show the ad "later" to work around hangs/crashes on the PS4
 
