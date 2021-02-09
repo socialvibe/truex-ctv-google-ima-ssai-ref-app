@@ -258,6 +258,7 @@ export class VideoController {
         console.log('video attached at: ' + this.timeDebugDisplay(this.initialVideoTime));
         this.videoStarted = false; // set to true on the first playing event
         this.currVideoTime = this.initialVideoTime; // will be updated as video progresses
+        this.hlsController.config.startPosition = this.initialVideoTime;
         this.hlsController.attachMedia(this.video);
         this.play();
     }
@@ -525,6 +526,10 @@ export class VideoController {
         }
 
         this.adBreaks = cuePoints.map((cue, index) => new AdBreak(cue, index));
+
+        console.log("ad breaks: " + this.adBreaks.map(adBreak => {
+            return timeLabel(this.getPlayingVideoTimeAt(adBreak.startTime, true))
+        }).join(", "));
     }
 
     hasAdBreakAt(rawVideoTime) {
