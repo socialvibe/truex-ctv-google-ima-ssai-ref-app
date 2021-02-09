@@ -20,7 +20,7 @@ export class VideoController {
         }
         this.video = null;
         this.adUI = null;
-        this.hlsController = new Hls();
+        this.hlsController = null;
         this.streamManager = null;
         this.videoStream = null;
 
@@ -95,15 +95,17 @@ export class VideoController {
 
         this.showControlBarInitially = showControlBar || false;
 
+        const isFirstStart = !!videoStream;
         if (videoStream) {
             this.videoStream = videoStream;
             this.adBreaks = []; // ensure ad breaks get reloaded
             this.initialVideoTime = 0; // ensure we start at the beginning
+            this.hlsController = new Hls();
+            console.log(`starting video: ${videoStream.title}`);
         } else {
             videoStream = this.videoStream;
         }
         if (!videoStream) return;
-        console.log(`starting video: ${videoStream.title}`);
 
         this.showLoadingSpinner(true);
 
@@ -124,46 +126,38 @@ export class VideoController {
         //this.videoOwner.insertBefore(adUI, overlay);
 
         this.streamManager = new StreamManager(video, adUI);
-        this.streamManager.addEventListener(
-            [
-                StreamEvent.Type.STREAM_INITIALIZED,
+
+        var streamEvents;
+        if (isFirstStart) {
+            // We need to load the main video url and full ad playlist.
+            streamEvents = [
                 StreamEvent.Type.LOADED,
                 StreamEvent.Type.ERROR,
                 StreamEvent.Type.CUEPOINTS_CHANGED,
                 StreamEvent.Type.STARTED,
-                StreamEvent.Type.AD_PERIOD_STARTED,
-                StreamEvent.Type.AD_PERIOD_ENDED,
                 StreamEvent.Type.AD_BREAK_STARTED,
-                StreamEvent.Type.AD_BREAK_ENDED,
-                //StreamEvent.Type.AD_PROGRESS
-            ],
-            this.onStreamEvent, false);
-
-        // TODO: needed or not?
-        // Add metadata listener. Only used in LIVE streams. Timed metadata
-        // is handled differently by different video players, and the IMA SDK provides
-        // two ways to pass in metadata, StreamManager.processMetadata() and
-        // StreamManager.onTimedMetadata().
-        //
-        // Use StreamManager.onTimedMetadata() if your video player parses
-        // the metadata itself.
-        // Use StreamManager.processMetadata() if your video player provides raw
-        // ID3 tags, as with hls.js.
-        this.hlsController.on(Hls.Events.FRAG_PARSING_METADATA, (event, data) => {
-            if (this.streamManager && data) {
-                // For each ID3 tag in our metadata, we pass in the type - ID3, the
-                // tag data (a byte array), and the presentation timestamp (PTS).
-                data.samples.forEach(sample => {
-                    this.streamManager.processMetadata('ID3', sample.data, sample.pts);
-                });
-            }
-        });
+                StreamEvent.Type.AD_BREAK_ENDED
+            ];
+        } else {
+            // Restarting, so we only need to know the next ad.
+            streamEvents = [
+                StreamEvent.Type.ERROR,
+                StreamEvent.Type.STARTED,
+                StreamEvent.Type.AD_BREAK_STARTED,
+                StreamEvent.Type.AD_BREAK_ENDED
+            ];
+        }
+        this.streamManager.addEventListener(streamEvents, this.onStreamEvent, false);
 
         const streamRequest = new google.ima.dai.api.VODStreamRequest();
         streamRequest.contentSourceId = videoStream.google_content_id;
         streamRequest.videoId = videoStream.google_video_id;
         streamRequest.apiKey = null; // unused since stream is not encrypted
         this.streamManager.requestStream(streamRequest);
+
+        if (!isFirstStart) {
+            this.attachVideo();
+        }
     }
 
     stopOldVideo(newVideoStream) {
@@ -213,7 +207,7 @@ export class VideoController {
     onStreamEvent(e) {
         const streamData = e.getStreamData();
         const ad = e.getAd();
-        console.log('stream event: ' + e.type);
+        console.log('IMA stream event: ' + e.type);
         switch (e.type) {
             case StreamEvent.Type.STREAM_INITIALIZED:
                 break;
@@ -228,18 +222,15 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.LOADED:
-                this.startPlayback(streamData.url);
+                this.hlsController.loadSource(streamData.url);
+                this.hlsController.on(Hls.Events.MANIFEST_PARSED, () =>  this.attachVideo());
                 break;
+
             case StreamEvent.Type.ERROR:
                 break;
 
             case StreamEvent.Type.STARTED:
                 this.startAd(ad);
-                break;
-
-            case StreamEvent.Type.AD_PERIOD_STARTED:
-                break;
-            case StreamEvent.Type.AD_PERIOD_ENDED:
                 break;
 
             case StreamEvent.Type.AD_BREAK_STARTED:
@@ -251,6 +242,7 @@ export class VideoController {
                 this.adUI.style.display = 'none';
                 this.refresh();
                 break;
+
             case StreamEvent.Type.AD_PROGRESS:
                 const adProgress = streamData.adProgressData;
                 const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
@@ -262,25 +254,13 @@ export class VideoController {
         }
     }
 
-    startPlayback(url) {
-        console.log('start playback at time ' + this.timeDebugDisplay(this.initialVideoTime) + ': ' + url);
-        const hls = this.hlsController;
-        hls.loadSource(url);
-        hls.attachMedia(this.video);
-        hls.on(Hls.Events.MANIFEST_PARSED, () => {
-            console.log('video manifest parsed');
-            this.videoStarted = false; // set to true on the first playing event
-            this.currVideoTime = this.initialVideoTime; // will be updated as video progresses
-            if (this.showControlBarInitially) {
-                const forceTimer = true;
-                this.showControlBar(forceTimer);
-            } else {
-                this.hideControlBar();
-            }
-            this.play();
-        });
+    attachVideo() {
+        console.log('video attached at: ' + this.timeDebugDisplay(this.initialVideoTime));
+        this.videoStarted = false; // set to true on the first playing event
+        this.currVideoTime = this.initialVideoTime; // will be updated as video progresses
+        this.hlsController.attachMedia(this.video);
+        this.play();
     }
-
 
     stopControlBarTimer() {
         if (this.controlBarTimer) {
@@ -488,14 +468,19 @@ export class VideoController {
 
         console.log('video playback started: ' + this.timeDebugDisplay(this.initialVideoTime));
 
-        if (this.initialVideoTime > 0) {
-            // Ensure we are at the desired initial position.
+        if (!this.platform.supportsInitialVideoSeek && this.initialVideoTime > 0) {
+            // The initial seek is not supported, e.g. on the PS4. Do it now.
             this.currVideoTime = 0;
-            this.video.currentTime = this.initialVideoTime;
+            this.seekTo(this.initialVideoTime);
         } else {
             this.showLoadingSpinner(false);
+            if (this.showControlBarInitially) {
+                const forceTimer = true;
+                this.showControlBar(forceTimer);
+            } else {
+                this.hideControlBar();
+            }
         }
-        this.refresh();
     }
 
     onVideoTimeUpdate() {
@@ -503,7 +488,7 @@ export class VideoController {
         if (!this.videoStarted) return;
 
         const newTime = Math.floor(this.video.currentTime);
-        //console.log('video time: ' + this.timeDebugDisplay(newTime));
+        if (this.debug) console.log('video time: ' + this.timeDebugDisplay(newTime));
 
         const currTime = this.currVideoTime;
         if (newTime == currTime) return;
