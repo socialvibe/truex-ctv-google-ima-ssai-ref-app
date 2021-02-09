@@ -441,8 +441,15 @@ export class VideoController {
             return;
         }
 
+        var vastConfigUrl = googleAd.getDescription();
+        vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
+        if (!vastConfigUrl) return;
+        if (!vastConfigUrl.startsWith('http')) {
+            vastConfigUrl = 'https://' + vastConfigUrl;
+        }
+
         adBreak.started = true;
-        console.log(`ad started: ${googleAd.getAdId()}: ${googleAd.getTitle()} at: ${this.timeDebugDisplay(adBreak.startTime)}`);
+        console.log(`truex ad started at: ${this.timeDebugDisplay(adBreak.startTime)}:\n${vastConfigUrl}`);
 
         // Start an interactive ad.
         this.hideControlBar();
@@ -454,13 +461,6 @@ export class VideoController {
         adBreak.placeHolderDuration = googleAd.getDuration();
         this.initialVideoTime = adBreak.fallbackStartTime;
 
-        var vastConfigUrl = googleAd.getDescription();
-        vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
-        if (!vastConfigUrl) return;
-        if (!vastConfigUrl.startsWith('http')) {
-            vastConfigUrl = 'https://' + vastConfigUrl;
-        }
-        console.log('loading truex ad: ' + vastConfigUrl);
         const ad = new InteractiveAd(vastConfigUrl, adBreak, this);
         setTimeout(() => ad.start(), 1); // show the ad "later" to work around hangs/crashes on the PS4
 
