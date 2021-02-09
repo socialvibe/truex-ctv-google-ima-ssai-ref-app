@@ -235,7 +235,7 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.AD_PROGRESS:
-                // We are tracking progress via our video own time updates.
+                // We are tracking progress via our own video time updates.
                 // const adProgress = streamData.adProgressData;
                 // const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
                 // console.log('Ad Progress: dur: ' + adProgress.duration + ' remaining: ' + timeRemaining);
