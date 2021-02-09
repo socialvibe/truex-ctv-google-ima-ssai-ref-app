@@ -436,6 +436,8 @@ export class VideoController {
 
             console.log(`ad break ${adBreak.index} skipped to: ${this.timeDebugDisplay(adBreak.endTime)}`);
 
+            this.hideControlBar();
+
             // skip a little past the end to avoid a flash of the final ad frame
             this.seekTo(adBreak.endTime + 1, this.isControlBarVisible);
         }
@@ -540,6 +542,10 @@ export class VideoController {
         }
 
         this.adBreaks = cuePoints.map((cue, index) => new AdBreak(cue, index));
+
+        console.log("ad breaks: " + this.adBreaks.map(adBreak => {
+            return timeLabel(this.getPlayingVideoTimeAt(adBreak.startTime, true))
+        }).join(", "));
     }
 
     hasAdBreakAt(rawVideoTime) {
@@ -567,11 +573,11 @@ export class VideoController {
             if (adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
                 const fallbackStart = adBreak.fallbackStartTime;
                 if (!skipAds && rawVideoTime >= fallbackStart) {
-                    // We are within the fallback ads, show time position withing the ad.
+                    // Show the position within the fallback ads.
                     return rawVideoTime - fallbackStart;
                 } else {
-                    // Just show the start of the ad break.
-                    return adBreak.startTime;
+                    // Correct to show the content position at the ad break.
+                    return result - (rawVideoTime - adBreak.startTime);
                 }
             } else if (adBreak.endTime <= rawVideoTime) {
                 // Discount the ad duration.
@@ -628,6 +634,7 @@ export class VideoController {
         }
 
         const durationToDisplay = this.getPlayingVideoDurationAt(currTime);
+        console.log('refresh: duration display: ' + timeLabel(durationToDisplay));
 
         function percentage(time) {
             const result = durationToDisplay > 0 ? (time / durationToDisplay) * 100 : 0;
