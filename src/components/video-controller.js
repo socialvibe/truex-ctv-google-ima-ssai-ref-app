@@ -51,6 +51,7 @@ export class VideoController {
         this.platform = platform || new TXMPlatform();
 
         this.loadingSpinner = null;
+        this.playPromise = null;
 
         this.onVideoTimeUpdate = this.onVideoTimeUpdate.bind(this);
         this.onVideoStarted = this.onVideoStarted.bind(this);
@@ -282,16 +283,23 @@ export class VideoController {
 
     play() {
         if (!this.video) return;
+        if (this.playPromise) return; // don't interrupt current play invocations
         if (this.debug) console.log(`play from: ${this.timeDebugDisplay(this.currVideoTime)}`);
         // Work around PS4 hangs by starting playback in a separate thread.
         setTimeout(() => {
             if (!this.video) return; // video has been closed
-            this.video.play();
+            this.playPromise = this.video.play();
+            if (this.playPromise) {
+                this.playPromise.then(() => {
+                    this.playPromise = null;
+                });
+            }
         }, 10);
     }
 
     pause() {
         if (!this.video) return;
+        if (this.playPromise) return; // don't interrupt current play invocations
         if (this.debug) console.log(`paused at: ${this.timeDebugDisplay(this.currVideoTime)}`);
         this.video.pause();
     }
