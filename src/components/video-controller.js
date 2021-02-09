@@ -193,7 +193,7 @@ export class VideoController {
     }
 
     /**
-     * Responds to a stream event.
+     * Responds to a Google IMA stream event.
      * @param  {StreamEvent} e
      */
     onStreamEvent(e) {
@@ -201,9 +201,6 @@ export class VideoController {
         const ad = e.getAd();
         console.log('IMA stream event: ' + e.type);
         switch (e.type) {
-            case StreamEvent.Type.STREAM_INITIALIZED:
-                break;
-
             case StreamEvent.Type.CUEPOINTS_CHANGED:
                 if (this.adBreaks.length == 0) {
                     this.setAdBreaks(streamData.cuepoints);
@@ -215,7 +212,7 @@ export class VideoController {
 
             case StreamEvent.Type.LOADED:
                 this.hlsController.loadSource(streamData.url);
-                this.hlsController.on(Hls.Events.MANIFEST_PARSED, () =>  this.attachVideo());
+                this.hlsController.on(Hls.Events.MANIFEST_PARSED, () => this.attachVideo());
                 break;
 
             case StreamEvent.Type.ERROR:
@@ -237,10 +234,11 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.AD_PROGRESS:
-                const adProgress = streamData.adProgressData;
-                const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
-                console.log('Ad Progress: dur: ' + adProgress.duration + ' remaining: ' + timeRemaining);
-                this.refresh();
+                // We are tracking progress via our video own time updates.
+                // const adProgress = streamData.adProgressData;
+                // const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
+                // console.log('Ad Progress: dur: ' + adProgress.duration + ' remaining: ' + timeRemaining);
+                // this.refresh();
                 break;
             default:
                 break;
@@ -449,7 +447,8 @@ export class VideoController {
         this.initialVideoTime = adBreak.fallbackStartTime;
 
         var vastConfigUrl = googleAd.getDescription();
-        vastConfigUrl = vastConfigUrl.trim();
+        vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
+        if (!vastConfigUrl) return;
         if (!vastConfigUrl.startsWith('http')) {
             vastConfigUrl = 'https://' + vastConfigUrl;
         }
@@ -558,7 +557,7 @@ export class VideoController {
                     // Show the position within the fallback ads.
                     return rawVideoTime - fallbackStart;
                 } else {
-                    // Correct to show the content position at the ad break.
+                    // Correct to show the content position at the ad break start.
                     return result - (rawVideoTime - adBreak.startTime);
                 }
             } else if (adBreak.endTime <= rawVideoTime) {
