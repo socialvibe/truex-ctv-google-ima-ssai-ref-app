@@ -109,10 +109,10 @@ export class VideoController {
 
         this.showLoadingSpinner(true);
 
-        // Put the video underneath any control overlays.
         const video = document.createElement('video');
         this.video = video;
 
+        // Put the video underneath any control overlays.
         const overlay = this.videoOwner.firstChild;
         this.videoOwner.insertBefore(this.video, overlay);
 
