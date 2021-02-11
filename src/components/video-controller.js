@@ -206,10 +206,8 @@ export class VideoController {
         switch (e.type) {
             case StreamEvent.Type.CUEPOINTS_CHANGED:
                 if (this.adBreaks.length == 0) {
+                    this.streamManager.removeEventListener(StreamEvent.Type.CUEPOINTS_CHANGED, this.onStreamEvent);
                     this.setAdBreaks(streamData.cuepoints);
-                    this.streamManager.removeEventListener(
-                        StreamEvent.Type.CUEPOINTS_CHANGED, this.onStreamEvent);
-                    this.refresh();
                 }
                 break;
 
@@ -542,6 +540,8 @@ export class VideoController {
         console.log("ad breaks: " + this.adBreaks.map(adBreak => {
             return timeLabel(this.getPlayingVideoTimeAt(adBreak.startTime, true))
         }).join(", "));
+
+        this.refresh();
     }
 
     hasAdBreakAt(rawVideoTime) {
