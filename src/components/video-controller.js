@@ -280,6 +280,7 @@ export class VideoController {
     }
 
     isPaused() {
+        if (this.playPromise) return false; // consider the video has not paused if it playback is pending
         return !this.video || this.video.paused;
     }
 
@@ -295,6 +296,9 @@ export class VideoController {
                 this.playPromise.then(() => {
                     this.playPromise = null;
                 });
+            }
+            if (this.isControlBarVisible) {
+                this.showControlBar(true); // ensure it times out
             }
         }, 10);
     }
@@ -502,6 +506,7 @@ export class VideoController {
         const currTime = this.currVideoTime;
         if (newTime == currTime) return;
         this.currVideoTime = newTime;
+        this.seekTarget = undefined;
 
         this.showLoadingSpinner(false);
 
@@ -522,7 +527,6 @@ export class VideoController {
             }
         }
 
-        this.seekTarget = undefined;
         this.refresh();
     }
 
