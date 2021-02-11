@@ -268,13 +268,16 @@ export class VideoController {
             this.startVideoLater(null, showControlBar);
             return;
         }
+
+        let forceControlBarTimeout = false;
         if (this.isPaused()) {
+            forceControlBarTimeout = true
             this.play();
         } else {
             this.pause();
         }
 
-        this.showControlBar();
+        this.showControlBar(forceControlBarTimeout);
     }
 
     isPaused() {
@@ -294,9 +297,6 @@ export class VideoController {
                 this.playPromise.then(() => {
                     this.playPromise = null;
                 });
-            }
-            if (this.isControlBarVisible) {
-                this.showControlBar(true); // ensure it times out
             }
         }, 10);
     }
