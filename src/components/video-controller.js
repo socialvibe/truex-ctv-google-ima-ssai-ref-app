@@ -377,6 +377,7 @@ export class VideoController {
     }
 
     seekTo(newTarget, showControlBar) {
+        if (this.playPromise) return; // don't interrupt current play invocations
         if (showControlBar === undefined) showControlBar = true; // default to showing the control bar
 
         const currTime = this.currVideoTime;
