@@ -432,19 +432,18 @@ export class VideoController {
         const podInfo = googleAd.getAdPodInfo();
         const adBreak = this.adBreaks[podInfo.getPodIndex()];
         if (!adBreak) return;
-        if (googleAd.getAdSystem() != 'trueX') return; // ignore non-trueX ads
-
-        // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
-        // the remaining ones are the fallback ad videos.
-        const adPosition = podInfo.getAdPosition();
-        if (adPosition != 1) return;
-
-        if (adBreak.started) return;
-
+        if (adBreak.started) return; // ad already processed
         if (adBreak.completed) {
+            // Ignore ads already completed.
             this.skipAd(adBreak);
             return;
         }
+
+        // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
+        // everything else are the fallback ad videos, or else non-truex ad videos.
+        // So anything not an interactive ad we just let play.
+        const isInteractiveAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
+        if (!isInteractiveAd) return;
 
         var vastConfigUrl = googleAd.getDescription();
         vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
@@ -461,7 +460,7 @@ export class VideoController {
 
         this.stopVideo(); // avoid multiple videos, e.g. for platforms like the PS4
 
-        // ensure main video is logically at the fallback videos for when it resumes
+        // Ensure main video is logically at the fallback videos for when it resumes
         // We just need to skip over the placeholder video of this interactive ad wrapper.
         adBreak.placeHolderDuration = googleAd.getDuration();
         this.initialVideoTime = adBreak.fallbackStartTime;
@@ -517,7 +516,7 @@ export class VideoController {
                     return;
                 }
             } else if (!adBreak.started) {
-                // We will get ad events when the ad is encountered
+                // We will get Google IMA ad start events when the ad is encountered
 
             } else if (Math.abs(adBreak.endTime - newTime) <= 1) {
                 // The user has viewed the whole ad.
