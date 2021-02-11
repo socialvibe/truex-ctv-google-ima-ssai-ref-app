@@ -278,7 +278,7 @@ export class VideoController {
     }
 
     isPaused() {
-        if (this.playPromise) return false; // consider the video has not paused if it playback is pending
+        if (this.playPromise) return false; // consider the video has not paused if playback is pending
         return !this.video || this.video.paused;
     }
 
