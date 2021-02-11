@@ -104,8 +104,10 @@ export class VideoController {
             console.log(`starting video: ${videoStream.title}`);
         } else {
             videoStream = this.videoStream;
+            if (!videoStream) {
+                throw new Error('missing video stream');
+            }
         }
-        if (!videoStream) return;
 
         this.showLoadingSpinner(true);
 
