@@ -157,8 +157,7 @@ import { VideoController } from "./components/video-controller";
     }
 
     function renderPlaybackPage() {
-        const showControlBar = true;
-        videoController.startVideoLater(currentVideoStream, showControlBar);
+        videoController.startVideoLater(currentVideoStream);
 
         const pageDiv = document.getElementById('playback-page');
 

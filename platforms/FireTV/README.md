@@ -8,7 +8,7 @@ The Amazon Web App Tester can be used readily to exercise an HTML web applicatio
 
 To run:
 * Install and run the Amazon Web App Tester from the Amazon store on the Fire TV.
-* Enter the url of either the [hosted version](https://ctv.truex.com/web/ref-app/master/index.html), or your locally running version (e.g. http://192.168.1.72:8080).
+* Enter the url of either the [hosted version](https://ctv.truex.com/web/ref-app-google-IMA/master/index.html), or your locally running version (e.g. http://192.168.1.72:8080).
 
 ## Native Reference App Launcher
 
@@ -21,7 +21,7 @@ To run:
 * Note the explicit overrides of `onBackPressed` and `onKeyDown` in `MainAcitvity`, so as to inject the back and menu remote control actions into the web view.
 
 You can also build the app launcher via the command line, e.g.
-* `npm run build-firetv` to refer to the standard [hosted version](https://ctv.truex.com/web/ref-app/master/index.html).
+* `npm run build-firetv` to refer to the standard [hosted version](https://ctv.truex.com/web/ref-app-google-IMA/master/index.html).
 * `npm run build-firetv -- http://192.168.1.72:8080` to override the url.
 
 ## History.back blocking

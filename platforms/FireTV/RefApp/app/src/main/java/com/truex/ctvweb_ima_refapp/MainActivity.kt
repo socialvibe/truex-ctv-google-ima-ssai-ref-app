@@ -1,4 +1,4 @@
-package com.truex.ctvwebrefapp
+package com.truex.ctvweb_ima_refapp
 
 import android.annotation.SuppressLint
 import android.app.Activity
@@ -14,7 +14,6 @@ import android.webkit.JavascriptInterface
 import android.webkit.WebSettings
 import android.webkit.WebView
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-
 
 class MainActivity : Activity() {
     private lateinit var webView: WebView

@@ -1,4 +1,4 @@
-package com.truex.ctvwebrefapp
+package com.truex.ctvweb_ima_refapp
 
 import android.util.Log
 

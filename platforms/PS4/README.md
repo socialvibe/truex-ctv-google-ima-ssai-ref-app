@@ -11,8 +11,8 @@ Follow these steps to build the CTV reference application PS4 Launcher:
           const ps4_pkg_gen_location = "C:/PS4/pkg_generator_ps4";    
         ```
 1. Make a build as via: `npm run build-ps4`
-    - This will make a qa .pkg installer to the `dist` folder that runs the app from `https://ctv.truex.com/web/ref-app/master/index.html`
-        - e.g. `ctv_ref_app_ps4_1.0.2.pkg`
+    - This will make a qa .pkg installer to the `dist` folder that runs the app from `https://ctv.truex.com/web/ref-app-google-IMA/master/index.html`
+        - e.g. `truex-ctv-IMA-ref-app_ps4_1.0.0.pkg`
     - To customize which url to use, e.g. to point to your own laptop for development, you can do things like:
         - `npm run build-ps4 -- http://192.168.1.72:8080`
         - which will create a installer that points to the locally hosted url instead
