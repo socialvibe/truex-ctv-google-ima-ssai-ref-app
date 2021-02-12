@@ -11,19 +11,18 @@ const deploy = () => {
     const log = logger.create('deploy');
 
     const bucket = "ctv.truex.com";
-    //const branch = process.env.TRAVIS_BRANCH;
-    const branch = 'develop';
+    const branch = process.env.TRAVIS_BRANCH;
     const prefix = 'web/ref-app-google-IMA/' + branch;
 
     const PR = process.env.TRAVIS_PULL_REQUEST;
     const isPR = PR != "false";
     const cloudFrontDistId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
 
-    // if (isPR) {
-    //     // We only want to deploy on the final merges.
-    //     log(`PR deploy skipped for ${bucket}/${prefix}`);
-    //     process.exit(0);
-    // }
+    if (isPR) {
+        // We only want to deploy on the final merges.
+        log(`PR deploy skipped for ${bucket}/${prefix}`);
+        process.exit(0);
+    }
 
     log(`deploying to ${bucket}/${prefix}`);
     return s3.cleanFolder(bucket, prefix)
