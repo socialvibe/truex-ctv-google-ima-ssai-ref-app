@@ -15,10 +15,11 @@ const deploy = () => {
     const branch = 'develop';
     const prefix = 'web/ref-app-google-IMA/' + branch;
 
-    const isPR = process.env.TRAVIS_PULL_REQUEST == "true";
+    const PR = process.env.TRAVIS_PULL_REQUEST;
+    const isPR = PR != "false";
     const cloudFrontDistId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
 
-    log(`travis: PR: ${prefix} branch: ${process.env.TRAVIS_BRANCH} cloudfront: ${cloudFrontDistId}`);
+    log(`travis: PR: ${isPR} ${PR}\n  branch: ${process.env.TRAVIS_BRANCH} cloudfront: ${cloudFrontDistId}`);
     if (isPR) {
         // We only want to deploy on the final merges.
         log(`PR deploy skipped for ${bucket}/${prefix}`);
