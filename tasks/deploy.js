@@ -16,7 +16,9 @@ const deploy = () => {
     const prefix = 'web/ref-app-google-IMA/' + branch;
 
     const isPR = process.env.TRAVIS_PULL_REQUEST == "true";
-    log(`travis: PR: ${prefix} branch: ${process.env.TRAVIS_BRANCH}`);
+    const cloudFrontDistId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
+
+    log(`travis: PR: ${prefix} branch: ${process.env.TRAVIS_BRANCH} cloudfront: ${cloudFrontDistId}`);
     if (isPR) {
         // We only want to deploy on the final merges.
         log(`PR deploy skipped for ${bucket}/${prefix}`);
@@ -30,9 +32,8 @@ const deploy = () => {
         })
         .then(() => {
             log("invalidating cloudfront cache");
-            const distributionId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
             const pathsToInvalidate = [`/${prefix}/index.html`];
-            return awsCloudFrontInvalidate(distributionId, pathsToInvalidate);
+            return awsCloudFrontInvalidate(cloudFrontDistId, pathsToInvalidate);
         })
         .then(() => {
             log("deploy complete");
