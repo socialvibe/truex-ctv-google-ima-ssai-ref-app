@@ -5,7 +5,7 @@ const pkg = require('./package.json');
 
 module.exports = function(env) {
     let configPath = './src/config.js';
-    console.log(`generating ${env} build: ${configPath}`);
+    console.log(`generating build: ${configPath}`);
 
     let config = {
         name: pkg.name,
