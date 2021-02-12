@@ -4,8 +4,14 @@ const fs = require('fs');
 const pkg = require('./package.json');
 
 module.exports = function(env) {
+    if (typeof env === "object") {
+        // Can happen during webpack dev runs.
+        env = env.env;
+    }
+    if (!env) env = 'dev';
+
     let configPath = './src/config.js';
-    console.log(`generating build: ${configPath}`);
+    console.log(`generating ${env} build ${pkg.version}: ${configPath}`);
 
     let config = {
         name: pkg.name,
