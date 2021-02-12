@@ -19,12 +19,11 @@ const deploy = () => {
     const isPR = PR != "false";
     const cloudFrontDistId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
 
-    log(`travis: PR: ${isPR} ${PR}\n  branch: ${process.env.TRAVIS_BRANCH} cloudfront: ${cloudFrontDistId}`);
-    if (isPR) {
-        // We only want to deploy on the final merges.
-        log(`PR deploy skipped for ${bucket}/${prefix}`);
-        process.exit(0);
-    }
+    // if (isPR) {
+    //     // We only want to deploy on the final merges.
+    //     log(`PR deploy skipped for ${bucket}/${prefix}`);
+    //     process.exit(0);
+    // }
 
     log(`deploying to ${bucket}/${prefix}`);
     return s3.cleanFolder(bucket, prefix)
