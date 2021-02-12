@@ -16,7 +16,8 @@ module.exports = function(env) {
     let config = {
         name: pkg.name,
         version: pkg.version,
-        buildDate: new Date().toISOString().replace('T', ' ').replace(/\..+$/, '')
+        buildDate: new Date().toISOString().replace('T', ' ').replace(/\..+$/, ''),
+        buildEnv: env,
     };
 
     let content = `
