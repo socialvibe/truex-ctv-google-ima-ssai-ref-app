@@ -2,11 +2,11 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const webpack = require('webpack');
 const path = require('path');
 
-const generateAppConfig = require('./generate-config');
+const generateConfig = require('./generate-config');
 
 module.exports = function(env) {
     // Generate the config module that exposes the build configuration to the runtime code base.
-    generateAppConfig(env);
+    generateConfig(env);
 
     return {
         mode: 'development',
