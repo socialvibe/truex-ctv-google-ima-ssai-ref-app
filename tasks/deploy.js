@@ -15,8 +15,15 @@ const deploy = () => {
     const branch = 'develop';
     const prefix = 'web/ref-app-google-IMA/' + branch;
 
-    log(`deploying to ${bucket}/${prefix}`);
+    const isPR = process.env.TRAVIS_PULL_REQUEST == "true";
+    log(`travis: PR: ${prefix} branch: ${process.env.TRAVIS_BRANCH}`);
+    if (isPR) {
+        // We only want to deploy on the final merges.
+        log(`PR deploy skipped for ${bucket}/${prefix}`);
+        process.exit(0);
+    }
 
+    log(`deploying to ${bucket}/${prefix}`);
     return s3.cleanFolder(bucket, prefix)
         .then(() => {
             return uploadDist(bucket, prefix);
