@@ -14,6 +14,19 @@
 1. Install via `npm run tizen-install`. Either pass in your TV's IP, or edit the default IP in [build.js](./builder.js) as appropriate. E.g.
    * `npm run install-tizen 192.168.1.85` 
 1. On the TV's home menu bar, select the "Apps" button. The Skyline app should appear, select it to run.
+
+## Tizen Identifier For Advertising (TIFA)
+This reference app shows how to access the TIFA and pass it along to the true[X] interactive ad.
+Refer to scan for 'platform.isTizen' in the [main.js](../../src/main.js) and [interactive-ad.js](../../src/components/interactive-ad.js) files.
+
+Note that querying the TIFA will only be permitted if one's web application has the `adinfo` privilege in their app's config.xml, e.g.
+```
+    <tizen:privilege name="http://developer.samsung.com/privilege/adinfo"/>
+```
+
+Refer to the TIFA documentation for details:
+* [Tizen ID for Advertising](https://developer.samsung.com/smarttv/develop/guides/unique-identifiers-for-smarttv/tizen-id-for-advertising.html)
+* [Adinfo API](https://developer.samsung.com/smarttv/develop/api-references/samsung-product-api-references/adinfo-api.html)
    
 ## To Debug:
 1. Open the LauncherApp in Tizen Studio. Choose "Debug As", use the remote launch manager to ensure the connection to your TV.

@@ -1,20 +1,27 @@
-import config              from './config';
-import { inputActions }    from 'truex-shared/focus_manager/txm_input_actions';
-import { Focusable }       from 'truex-shared/focus_manager/txm_focusable';
+import config from './config';
+import { inputActions } from 'truex-shared/focus_manager/txm_input_actions';
+import { Focusable } from 'truex-shared/focus_manager/txm_focusable';
 import { TXMFocusManager } from 'truex-shared/focus_manager/txm_focus_manager';
+import { ScriptLoader } from "truex-shared/src/utils/loaders";
 import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
-import { DebugLog }        from './components/debug-log';
-import { LoadingSpinner }  from "./components/loading-spinner";
+import { DebugLog } from './components/debug-log';
+import { LoadingSpinner } from "./components/loading-spinner";
 import { VideoController } from "./components/video-controller";
 
 
-(function () {
+(function() {
     const focusManager = new TXMFocusManager();
     const platform = focusManager.platform;
 
     // Expose to allow input injections from FireTV native code.
     window.focusManager = focusManager;
     window.webApp = {};
+
+    if (platform.isTizen) {
+        // Needed for accessing the platform advertising id.
+        const webApiLoader = new ScriptLoader('$WEBAPIS/webapis/webapis.js');
+        webApiLoader.load();
+    }
 
     let currentPage = 'home-page';
     let lastPage;
