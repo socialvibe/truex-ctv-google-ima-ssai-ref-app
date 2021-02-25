@@ -29,14 +29,27 @@ function build(serverUrl, useHostedApp = true) {
         utils.ensureDir(buildDir); // ensure build is present.
     }
 
+    // The allowed Tizen app name is a bit restrictive.
+    const appName = pkg.name.replace(/[_-]/g, '');
+
     const appDir = path.resolve(__dirname, "LauncherApp");
     utils.copyFileToDir(path.resolve(appDir, "config.xml"), buildDir);
     utils.copyFileToDir(path.resolve(appDir, "icon.png"), buildDir);
 
-    utils.replacePatterns(path.resolve(buildDir, "config.xml"), [{
-        match: /(<widget.*) version="[^"]+"/,
-        replacement: '$1 version="' + pkg.version + '"'
-    }]);
+    utils.replacePatterns(path.resolve(buildDir, "config.xml"), [
+        {
+            match: /(<tizen:application id="[^.]+\.)[^"]+"/,
+            replacement: '$1' + appName + '"'
+        },
+        {
+            match: /<name>.*<\/name>/,
+            replacement: '<name>' + appName + '</name>'
+        },
+        {
+            match: /(<widget.*) version="[^"]+"/,
+            replacement: '$1 version="' + pkg.version + '"'
+        }
+    ]);
 
     if (useHostedApp) {
         // Put in the page that loads the web app in an iframe.
@@ -65,7 +78,7 @@ function build(serverUrl, useHostedApp = true) {
     utils.mkDir(getInstallerDir());
     const installerFile = getInstallerFile();
     utils.spawn(tizenCmd, "package -t wgt -s devprofile -- " + buildDir);
-    const buildResult = path.resolve(buildDir, 'TruexRefApp.wgt');
+    const buildResult = path.resolve(buildDir, appName + '.wgt');
     utils.copyFile(buildResult, installerFile);
     console.log('created ' + installerFile);
 }

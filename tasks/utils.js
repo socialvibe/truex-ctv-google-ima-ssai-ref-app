@@ -82,7 +82,7 @@ function isFile(path) {
 
 function ensureFile(path) {
     if (isFile(path)) return path;
-    fatalError("file not found:", path);
+    fatalError("file not found:" + path);
 }
 
 function isDir(path) {
