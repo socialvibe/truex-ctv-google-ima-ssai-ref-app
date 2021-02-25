@@ -11,7 +11,7 @@
    * `npm run build-tizen-local`
       * Creates a .wgt installer that has the skyline app embedded inside of it.
       * The means the tizen API is available to at least the choice card.
-   * NOTE: Only the local build will allow access to all the remote key events, 
+   * NOTE: Only the local build will allow access to all the remote key events, and the TIFA (see below).
      e.g. play/pause/FF/REW, 2 to skip ads, 4 to show the in-app console log.
      This is because the tizen API is needed to successfully register access to extra keystrokes beyond the
      standard ones of Enter / Return / Up / Down / Left / Right, and the tizen API is only available to web
