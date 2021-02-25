@@ -17,12 +17,6 @@ import { VideoController } from "./components/video-controller";
     window.focusManager = focusManager;
     window.webApp = {};
 
-    if (platform.isTizen) {
-        // Needed for accessing the platform advertising id.
-        const webApiLoader = new ScriptLoader('$WEBAPIS/webapis/webapis.js');
-        webApiLoader.load();
-    }
-
     let currentPage = 'home-page';
     let lastPage;
 

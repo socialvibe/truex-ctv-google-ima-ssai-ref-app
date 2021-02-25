@@ -20,7 +20,13 @@
 
 ## Tizen Identifier For Advertising (TIFA)
 This reference app shows how to access the TIFA and pass it along to the true[X] interactive ad.
-Refer to scan for 'platform.isTizen' in the [main.js](../../src/main.js) and [interactive-ad.js](../../src/components/interactive-ad.js) files.
+Search for 'platform.isTizen' in the [interactive-ad.js](../../src/components/interactive-ad.js) file to see how that is accessed.
+
+Note also this script entry in [index.html](../../src/index.html) to access the Tizen webapi:
+```html
+  <!-- webapi for Tizen: -->
+  <script src="$WEBAPIS/webapis/webapis.js"></script>
+```
 
 Note that querying the TIFA will only be permitted if one's web application has the `adinfo` privilege in their app's config.xml, e.g.
 ```
