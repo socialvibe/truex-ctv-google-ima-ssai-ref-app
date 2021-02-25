@@ -1,4 +1,4 @@
-# Skyline on Samsung TVs (Tizen OS)
+# Samsung Tizen Deployment
 
 ## Running this project
 1. Clone this repo
@@ -6,13 +6,16 @@
 1. Install the IDE (See IDE Installation).
 1. Build the project via either
    * `npm run build-tizen`
-      * Creates a .wgt installer that refers to the hosted web app at `http://skyline.truex.com`
+      * Creates a .wgt installer that refers to the hosted web app, by default 
+        at `https://ctv.truex.com/web/ref-app-google-IMA/master/index.html`
    * `npm run build-tizen-local`
       * Creates a .wgt installer that has the skyline app embedded inside of it.
       * The means the tizen API is available to at least the choice card.
    * NOTE: Only the local build will allow access to all the remote key events, 
      e.g. play/pause/FF/REW, 2 to skip ads, 4 to show the in-app console log.
-     This is because the tizen API is needed to successfully register access to extra keystrokes beyond the standard ones of Enter / Return / Up / Down / Left / Right, and the tizen API is only available to web code that is included in the launcher itself.
+     This is because the tizen API is needed to successfully register access to extra keystrokes beyond the
+     standard ones of Enter / Return / Up / Down / Left / Right, and the tizen API is only available to web
+     code that is included in the launcher itself.
 1. Set up TV (See Turning on Dev Mode on Tizen TV)
 1. Install via `npm run tizen-install`. Either pass in your TV's IP, or edit the default IP in [build.js](./builder.js) as appropriate. E.g.
    * `npm run install-tizen 192.168.1.85` 
