@@ -109,13 +109,17 @@ export class InteractiveAd {
                 const adinfo = webapis && webapis.adinfo;
                 if (adinfo) {
                     try {
-                        advertisingId = !adinfo.isLATEnabled() && adinfo.getTIFA();
-                        console.log('tizen ad id: ' + advertisingId);
+                        if (adinfo.isLATEnabled()) {
+                            console.log('tizen ad id ignored due to Limited Ad Tracking');
+                        } else {
+                            advertisingId = adinfo.getTIFA();
+                            console.log('tizen ad id: ' + advertisingId);
+                        }
                     } catch (err) {
-                        console.log('tizen ad id error: ' + platform.describeError(err));
+                        console.warn('tizen ad id error: ' + platform.describeError(err));
                     }
                 } else {
-                    console.log('tizen ad id: api not present');
+                    console.warn('tizen ad id: webapis not present');
                 }
             }
 
