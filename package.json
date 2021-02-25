@@ -12,7 +12,7 @@
         "build-ps4": "run-func ./platforms/PS4/builder build",
         "build-xboxone": "run-func ./platforms/XboxOne/builder build",
         "build-tizen": "run-func ./platforms/Tizen/builder build-hosted",
-        "build-tizen-local": "npm run qa && run-func ./platforms/Tizen/builder build-local",
+        "build-tizen-local": "npm run build && run-func ./platforms/Tizen/builder build-local",
         "install-tizen": "run-func ./platforms/Tizen/builder install"
     },
     "devDependencies": {

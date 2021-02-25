@@ -2,7 +2,7 @@ import config from './config';
 import { inputActions } from 'truex-shared/focus_manager/txm_input_actions';
 import { Focusable } from 'truex-shared/focus_manager/txm_focusable';
 import { TXMFocusManager } from 'truex-shared/focus_manager/txm_focus_manager';
-import { ScriptLoader } from "truex-shared/src/utils/loaders";
+import { ScriptLoader } from "truex-shared/utils/loaders";
 import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
 import { DebugLog } from './components/debug-log';
 import { LoadingSpinner } from "./components/loading-spinner";

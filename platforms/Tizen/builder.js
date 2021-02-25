@@ -65,7 +65,7 @@ function build(serverUrl, useHostedApp = true) {
     utils.mkDir(getInstallerDir());
     const installerFile = getInstallerFile();
     utils.spawn(tizenCmd, "package -t wgt -s devprofile -- " + buildDir);
-    const buildResult = path.resolve(buildDir, 'TruexRefApp_GoogleIMA.wgt');
+    const buildResult = path.resolve(buildDir, 'TruexRefApp.wgt');
     utils.copyFile(buildResult, installerFile);
     console.log('created ' + installerFile);
 }
