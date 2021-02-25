@@ -1,5 +1,5 @@
 {
-    "name": "truex-ctv-IMA-ref-app",
+    "name": "TruexRefApp_GoogleIMA",
     "version": "1.0.0",
     "description": "Sample app to demonstrate how to integrate true[X]'s CTV Web ad renderer",
     "main": "index.js",
@@ -10,7 +10,10 @@
         "build": "npm run clean && webpack",
         "build-firetv": "run-func ./platforms/FireTV/builder build",
         "build-ps4": "run-func ./platforms/PS4/builder build",
-        "build-xboxone": "run-func ./platforms/XboxOne/builder build"
+        "build-xboxone": "run-func ./platforms/XboxOne/builder build",
+        "build-tizen": "run-func ./platforms/Tizen/builder build-hosted",
+        "build-tizen-local": "npm run qa && run-func ./platforms/Tizen/builder build-local",
+        "install-tizen": "run-func ./platforms/Tizen/builder install"
     },
     "devDependencies": {
         "@babel/code-frame": "^7.8.3",
