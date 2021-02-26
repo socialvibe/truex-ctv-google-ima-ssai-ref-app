@@ -1,14 +1,15 @@
-import config              from './config';
-import { inputActions }    from 'truex-shared/focus_manager/txm_input_actions';
-import { Focusable }       from 'truex-shared/focus_manager/txm_focusable';
+import config from './config';
+import { inputActions } from 'truex-shared/focus_manager/txm_input_actions';
+import { Focusable } from 'truex-shared/focus_manager/txm_focusable';
 import { TXMFocusManager } from 'truex-shared/focus_manager/txm_focus_manager';
+import { ScriptLoader } from "truex-shared/utils/loaders";
 import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
-import { DebugLog }        from './components/debug-log';
-import { LoadingSpinner }  from "./components/loading-spinner";
+import { DebugLog } from './components/debug-log';
+import { LoadingSpinner } from "./components/loading-spinner";
 import { VideoController } from "./components/video-controller";
 
 
-(function () {
+(function() {
     const focusManager = new TXMFocusManager();
     const platform = focusManager.platform;
 
@@ -248,6 +249,11 @@ import { VideoController } from "./components/video-controller";
 
                 const handled = baseOnInputAction(action);
                 if (handled) return true;
+
+                if (action == inputActions.exit) {
+                    platform.exitApp();
+                    return true;
+                }
 
                 if (action == inputActions.back) {
                     returnToParentPage();

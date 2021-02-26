@@ -451,6 +451,10 @@ export class VideoController {
         if (!vastConfigUrl.startsWith('http')) {
             vastConfigUrl = 'https://' + vastConfigUrl;
         }
+        if (this.platform.isTizen) {
+            // Work around Tizen user agent filtering for now until Tizen is enabled on the back end.
+            vastConfigUrl = vastConfigUrl.replace(/\&?user_agent=[^&]*/, '') + '&user_agent=';
+        }
 
         adBreak.started = true;
         console.log(`truex ad started at ${this.timeDebugDisplay(adBreak.startTime)}:\n${vastConfigUrl}`);

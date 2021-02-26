@@ -11,6 +11,8 @@ export class InteractiveAd {
         let adOverlay;
         let tar;
 
+        const platform = videoController.platform;
+
         this.start = async () => {
             adBreak.started = true;
 
@@ -85,7 +87,6 @@ export class InteractiveAd {
                     resumePlayback();
                     break;
             }
-
         }
 
         async function getNativePlatformAdvertisingId() {
@@ -101,7 +102,28 @@ export class InteractiveAd {
                 });
             }
 
-            return Promise.resolve(undefined);
+            var advertisingId = undefined;
+
+            if (platform.isTizen) {
+                const webapis = window.webapis;
+                const adinfo = webapis && webapis.adinfo;
+                if (adinfo) {
+                    try {
+                        if (adinfo.isLATEnabled()) {
+                            console.log('tizen ad id ignored due to Limited Ad Tracking');
+                        } else {
+                            advertisingId = adinfo.getTIFA();
+                            console.log('tizen ad id: ' + advertisingId);
+                        }
+                    } catch (err) {
+                        console.warn('tizen ad id error: ' + platform.describeError(err));
+                    }
+                } else {
+                    console.warn('tizen ad id: webapis not present');
+                }
+            }
+
+            return Promise.resolve(advertisingId);
         }
 
         function handleAdError(errOrMsg) {
