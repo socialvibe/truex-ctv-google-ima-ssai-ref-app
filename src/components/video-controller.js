@@ -451,8 +451,9 @@ export class VideoController {
         if (!vastConfigUrl.startsWith('http')) {
             vastConfigUrl = 'https://' + vastConfigUrl;
         }
-        if (this.platform.isTizen) {
-            // Work around Tizen user agent filtering for now until Tizen is enabled on the back end.
+        if (this.platform.isTizen || this.platform.isLG) {
+            // Work around user agent filtering for now until these platforms
+            // are enabled on the back end.
             vastConfigUrl = vastConfigUrl.replace(/\&?user_agent=[^&]*/, '') + '&user_agent=';
         }
 
