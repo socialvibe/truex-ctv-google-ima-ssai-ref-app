@@ -37,7 +37,7 @@ function build(serverUrl) {
     utils.mkDir(getInstallerDir());
     const installerFile = getInstallerFile();
     utils.spawn('ares-package', ['-o', launcherDir,  '-n', launcherDir]);
-    const buildResult = path.resolve(launcherDir, `com.truex.ref-app-google-IMA_${pkg.version}_all.ipk`);
+    const buildResult = path.resolve(launcherDir, `com.truex.ref-app-google-ima_${pkg.version}_all.ipk`);
     utils.copyFile(buildResult, installerFile);
     console.log('created ' + installerFile);
 }
