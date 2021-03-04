@@ -13,7 +13,7 @@
    - basically, you install and run the "developer mode" app, sign in with your LG developer account, enable dev mode
    - use the ares-setup-device, ares-novacom to define a secure link to the TV
    - use the ares-install commands to load the app .ipk onto the TV
-   - e.g. `ares-install -d my-lg-tv installers/TruexRefApp_lg-webos_1.1.1.ipk`
+   - e.g. `ares-install -d my-lg-tv installers/TruexRefApp_GoogleIMA_lg-webos_1.1.1.ipk`
 1. Install via `npm run install-lg`. Either pass in your TV's IP, or edit the default IP in [build.js](./builder.js) as appropriate. E.g.
    * `npm run install-lg 192.168.1.85`
 1. You should see the Truex ref app on the app menu bar.
