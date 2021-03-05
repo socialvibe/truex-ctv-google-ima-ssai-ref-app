@@ -33,7 +33,7 @@ namespace RefApp
         {
             // The URI string
             // var uriToLaunch = "http://192.168.2.65:8080/";
-            var uriToLaunch = "https://ctv.truex.com/web/ref-app/master/index.html";
+            var uriToLaunch = "https://ctv.truex.com/web/ref-app-google-IMA/master/index.html";
 
             // Create a Uri object from the URI string
             var uri = new Uri(uriToLaunch);
