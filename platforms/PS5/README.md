@@ -13,7 +13,7 @@ Follow these steps to build the PS5 Launcher for this reference app:
           const prospero_pub_cmd = "C:/Program Files (x86)/SCE/Prospero/Tools/Publishing Tools/bin/prospero-pub-cmd.exe";    
         ```
 1. Make a build as via: `npm run build-PS5`
-    - This will make a qa .pkg installer to the `installers` folder that runs the app from `https://ctv.truex.com/web/ref-app-google-ima/master/index.html`
+    - This will make a qa .pkg installer to the `installers` folder that runs the app from `https://ctv.truex.com/web/ref-app-google-IMA/master/index.html`
         - e.g. `TruexRefApp_GoogleIMA_ps5_qa_1.0.2.pkg`
     - To customize which url to use, e.g. to point to your own laptop for development, you can do things like:
         - `npm run build-ps5 -- dev http://192.168.0.110:8080`
