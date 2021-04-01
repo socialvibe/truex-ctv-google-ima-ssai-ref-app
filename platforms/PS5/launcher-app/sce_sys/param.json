@@ -11,7 +11,7 @@
   "localizedParameters": {
     "defaultLanguage": "en-US",
     "en-US": {
-      "titleName": "TruexRefApp"
+      "titleName": "TruexRefApp_GoogleIMA"
     }
   },
   "masterVersion": "01.00",
@@ -20,5 +20,5 @@
   "userDefinedParam2": 2,
   "userDefinedParam3": 3,
   "userDefinedParam4": 4,
-  "webAppUri": "https://ctv.truex.com/web/ref-app-google-ima/master/index.html"
+  "webAppUri": "https://ctv.truex.com/web/ref-app-google-IMA/master/index.html"
 }
