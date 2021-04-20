@@ -39,7 +39,7 @@ For platform deployments using your local build, you will need to refer to your 
 ## Platform Deployments
 
 The instructions for deploy to specific device platforms are available in the platform specific READMEs under the `./platforms` directory:
-* [Fire TV / Android TV](./platforms/FireTV/README.md)
+* [Fire TV / Android TV](platforms/AndroidFireTV/README.md)
 * [Vizio](./platforms/Vizio/README.md)
 * [LG](./platforms/LG/README.md)
 * [Tizen](./platforms/Tizen/README.md)
