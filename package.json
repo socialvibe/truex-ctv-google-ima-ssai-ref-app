@@ -1,6 +1,6 @@
 {
     "name": "TruexRefApp_GoogleIMA",
-    "version": "1.1.2",
+    "version": "1.2.0",
     "description": "Sample app to demonstrate how to integrate Google IMA with true[X]'s CTV Web ad renderer",
     "main": "index.js",
     "public": true,
