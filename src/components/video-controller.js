@@ -118,6 +118,8 @@ export class VideoController {
         const overlay = this.videoOwner.firstChild;
         this.videoOwner.insertBefore(this.video, overlay);
 
+        video.poster = 'noposter'; // work around grey play icon on Android TV.
+
         video.addEventListener('playing', this.onVideoStarted);
         video.addEventListener("timeupdate", this.onVideoTimeUpdate);
 
