@@ -19,6 +19,7 @@
         android:roundIcon="@mipmap/app_icon"
         android:banner="@drawable/app_icon"
         android:logo="@drawable/app_icon"
+        android:usesCleartextTraffic="true"
         android:supportsRtl="true"
         android:hardwareAccelerated="true"
         android:theme="@style/AppTheme">
