@@ -1,10 +1,10 @@
-package com.truex.ctvweb_ima_refapp
+package com.truex.ima_refapp
 
 import android.annotation.SuppressLint
 import android.app.Activity
 import android.os.AsyncTask
+import android.os.Build
 import android.os.Bundle
-import android.os.PersistableBundle
 import android.provider.Settings.Secure
 import android.view.KeyEvent
 import android.view.View
@@ -66,7 +66,7 @@ class MainActivity : Activity() {
             var limitAdTracking: Boolean
             try {
                 val adInfo: AdvertisingIdClient.Info =
-                    AdvertisingIdClient.getAdvertisingIdInfo(applicationContext)
+                        AdvertisingIdClient.getAdvertisingIdInfo(applicationContext)
                 adId = adInfo.getId()
                 limitAdTracking = adInfo.isLimitAdTrackingEnabled()
             } catch (e: Exception) {
@@ -82,7 +82,7 @@ class MainActivity : Activity() {
 
             runOnUiThread {
                 evalJS(
-                    "if (webApp && webApp.onAdvertisingIdReady) webApp.onAdvertisingIdReady(\"" + adId + "\")"
+                        "if (webApp && webApp.onAdvertisingIdReady) webApp.onAdvertisingIdReady(\"" + adId + "\")"
                 )
             }
         }
@@ -102,6 +102,14 @@ class MainActivity : Activity() {
             return true
         }
         return super.onKeyDown(keyCode, event)
+    }
+
+    fun isFireTV() : Boolean {
+        return Build.MODEL.indexOf("AFT") >= 0
+    }
+
+    fun isAndroidTV() : Boolean {
+        return !isFireTV()
     }
 
 }

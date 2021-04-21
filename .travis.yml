@@ -1,11 +1,13 @@
 language: node_js
 node_js:
-- "11.10.1"
+  - "11.10.1"
 sudo: required
 branches:
   only:
     - develop
     - master
+    - /^release/
+    - test
 install:
   - npm install
 before_script:

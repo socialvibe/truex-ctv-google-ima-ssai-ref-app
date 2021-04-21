@@ -7,7 +7,7 @@ android {
     buildToolsVersion "29.0.2"
 
     defaultConfig {
-        applicationId "com.truex.ctvweb_ima_refapp"
+        applicationId "com.truex.ima_refapp"
         minSdkVersion 21
         targetSdkVersion 29
         versionCode 1
