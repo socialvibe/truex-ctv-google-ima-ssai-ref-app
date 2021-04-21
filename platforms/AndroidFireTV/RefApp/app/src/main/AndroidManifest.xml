@@ -1,6 +1,6 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools"
-    package="com.truex.ctvweb_ima_refapp">
+    package="com.truex.ima_refapp">
 
     <uses-permission android:name="android.permission.INTERNET"/>
 
@@ -23,7 +23,7 @@
         android:hardwareAccelerated="true"
         android:theme="@style/AppTheme">
 
-        <activity android:name=".MainActivity"
+        <activity android:name="com.truex.ima_refapp.MainActivity"
             android:alwaysRetainTaskState="true"
             android:launchMode="singleTask"
             android:hardwareAccelerated="true">
