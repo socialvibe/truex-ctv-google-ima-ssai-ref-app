@@ -32,7 +32,7 @@ const deploy = () => {
             return awsCloudFrontInvalidate(cloudFrontDistId, pathsToInvalidate);
         })
         .then(() => {
-            log("deploy complete");
+            console.log("deploy complete");
         })
         .catch((err) => {
             console.error(`deploy error: ${err}`);
