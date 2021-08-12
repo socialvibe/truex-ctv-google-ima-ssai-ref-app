@@ -1,7 +1,7 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
-## v1.4.0
+## v1.3.1
 * Use latest TAR, truex-shared updated to add Comcast support.
 
 ## v1.3.0
