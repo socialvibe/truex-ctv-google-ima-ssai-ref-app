@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## v1.4.1
+* Use latest TAR, truex-shared updated to fix Comcast bug.
+
 ## v1.4.0
 * Use latest TAR, truex-shared updated to add Comcast support.
 
