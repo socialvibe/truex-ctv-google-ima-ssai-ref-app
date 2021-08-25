@@ -2,7 +2,7 @@
 All notable changes to this project will be documented in this file.
 
 ## v1.3.1
-* Use latest TAR, truex-shared updated to add Comcast support.
+* Use latest TAR, truex-shared to add Comcast support
 
 ## v1.3.0
 * Use latest TAR, truex-shared for S3 deploy fixes
