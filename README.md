@@ -4,8 +4,8 @@ For an initial introduction on how to integrate the true[X] SDK into a web appli
 
 This project contains sample source code that demonstrates an example integration of true[X]'s CTV Web ad renderer with the Google Ad Manager, using the IMA SDK (Server Side). This further exemplifies the needed logic to manage true[X] opt-in flows (choice cards) as fully stitched into the video stream, when true[X] ads are encountered in the ad feed.
 
-Google IMA Documentation can be found [here|https://developers.google.com/interactive-media-ads].
-Client Side example can be found [here|https://github.com/socialvibe/truex-ctv-google-ima-csai-ref-app].
+Google IMA Documentation can be found [here](https://developers.google.com/interactive-media-ads).
+Client Side example can be found [here](https://github.com/socialvibe/truex-ctv-google-ima-csai-ref-app).
 
 For a more detailed true[X] integration guide, please refer to the [CTV Web Integration documentation](https://github.com/socialvibe/truex-ctv-web-integration) on github.com.
 
