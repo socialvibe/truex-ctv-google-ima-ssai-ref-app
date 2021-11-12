@@ -6,7 +6,7 @@
  * or else 3rd party non-truex ad videos. For completed interactive ads, the entire ad break is skipped.
  */
 export class AdBreak {
-    constructor(cuePoint, index) {
+    constructor(cuePoint, index, previousAdBreakDurations) {
         this.index = index;
         this.startTime = cuePoint.start;
         this.endTime = cuePoint.end;
@@ -15,6 +15,8 @@ export class AdBreak {
 
         // The length of the truex placeholder video.
         this.placeHolderDuration = 0;
+
+        this.contentStartTime = this.startTime - previousAdBreakDurations;
     }
 
     get duration() {

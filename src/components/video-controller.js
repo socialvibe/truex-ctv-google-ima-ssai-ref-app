@@ -18,6 +18,11 @@ export class VideoController {
         if (!this.videoOwner) {
             throw new Error('video owner not found: ' + videoOwner);
         }
+
+        // The IMA SDK can steal the keyboard focus, esp if the user is clicking on ads.
+        // Ensure the app focus is again in place.
+        this.videoOwner.addEventListener("click", () => window.focus());
+
         this.video = null;
         this.hlsController = null;
         this.streamManager = null;
@@ -35,6 +40,7 @@ export class VideoController {
         this.pauseButton = this.controlBarDiv.querySelector('.pause-button');
         this.pauseButton.innerHTML = pauseSvg;
 
+        this.timeline = this.controlBarDiv.querySelector('.timeline');
         this.progressBar = this.controlBarDiv.querySelector('.timeline-progress');
         this.seekBar = this.controlBarDiv.querySelector('.timeline-seek');
         this.adMarkersDiv = this.controlBarDiv.querySelector('.ad-markers');
@@ -52,6 +58,9 @@ export class VideoController {
 
         this.loadingSpinner = null;
         this.playPromise = null;
+
+        this.onControlBarClick = this.onControlBarClick.bind(this);
+        this.controlBarDiv.addEventListener('click', this.onControlBarClick);
 
         this.onVideoTimeUpdate = this.onVideoTimeUpdate.bind(this);
         this.onVideoStarted = this.onVideoStarted.bind(this);
@@ -118,7 +127,9 @@ export class VideoController {
         const overlay = this.videoOwner.firstChild;
         this.videoOwner.insertBefore(this.video, overlay);
 
-        video.poster = 'noposter'; // work around grey play icon on Android TV.
+        if (this.platform.isAndroid) {
+            video.poster = 'noposter'; // work around grey play icon on Android TV.
+        }
 
         video.addEventListener('playing', this.onVideoStarted);
         video.addEventListener("timeupdate", this.onVideoTimeUpdate);
@@ -296,9 +307,9 @@ export class VideoController {
             if (!this.video) return; // video has been closed
             this.playPromise = this.video.play();
             if (this.playPromise) {
-                this.playPromise.then(() => {
-                    this.playPromise = null;
-                });
+                this.playPromise
+                    .then(() => this.playPromise = null)
+                    .catch(() => this.playPromise = null);
             }
         }, 10);
     }
@@ -411,6 +422,29 @@ export class VideoController {
 
         if (showControlBar) {
             this.showControlBar();
+        }
+    }
+
+    onControlBarClick(event) {
+        event.stopImmediatePropagation();
+        event.preventDefault();
+
+        const currTime = this.currVideoTime;
+        const timelineBounds = this.timeline.getBoundingClientRect();
+        const mouseX = event.clientX;
+        if (mouseX < timelineBounds.left) {
+            // Interpret as a play/pause toggle, in case we are clicking just beside the button.
+            this.togglePlayPause();
+
+        } else if (this.hasAdBreakAt(currTime)) {
+            return;  // Don't allow user seeking during ad playback
+
+        } else {
+            const timelineX = Math.max(0, mouseX - timelineBounds.left);
+            const timelineRatio = timelineX / timelineBounds.width;
+            const videoDuration = this.getPlayingVideoDurationAt(currTime);
+            const contentTargetTime = videoDuration * timelineRatio;
+            this.seekTo(this.getRawVideoTimeAt(contentTargetTime));
         }
     }
 
@@ -543,7 +577,13 @@ export class VideoController {
             this.adMarkersDiv.removeChild(childNodes[i]);
         }
 
-        this.adBreaks = cuePoints.map((cue, index) => new AdBreak(cue, index));
+        this.adBreaks = [];
+        let totalAdBreakDuration = 0;
+        cuePoints.forEach((cue, index) => {
+            const adBreak = new AdBreak(cue, index, totalAdBreakDuration);
+            this.adBreaks.push(adBreak);
+            totalAdBreakDuration += adBreak.duration;
+        });
 
         console.log("ad breaks: " + this.adBreaks.map(adBreak => {
             return timeLabel(this.getPlayingVideoTimeAt(adBreak.startTime, true))
@@ -598,6 +638,18 @@ export class VideoController {
         }
         const duration = this.video && this.video.duration || 0;
         return this.getPlayingVideoTimeAt(duration);
+    }
+
+    getRawVideoTimeAt(contentVideoTime) {
+        let result = contentVideoTime;
+        for (var index in this.adBreaks) {
+            const adBreak = this.adBreaks[index];
+            if (contentVideoTime < adBreak.contentStartTime) break; // future ads don't affect things
+            if (adBreak.contentStartTime < contentVideoTime) {
+                result += adBreak.duration;
+            }
+        }
+        return result;
     }
 
     timeDebugDisplay(rawVideoTime) {
