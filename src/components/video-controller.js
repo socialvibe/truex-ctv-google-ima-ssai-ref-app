@@ -184,6 +184,7 @@ export class VideoController {
     }
 
     stopVideo() {
+        console.log("stopping video");
         this.hideControlBar();
 
         this.showLoadingSpinner(false);
@@ -214,6 +215,7 @@ export class VideoController {
      */
     onStreamEvent(e) {
         const streamData = e.getStreamData();
+        const adProgress = streamData.adProgressData;
         const ad = e.getAd();
         console.log('IMA stream event: ' + e.type);
         switch (e.type) {
@@ -233,6 +235,7 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.STARTED:
+                console.log('IMA ad started: ' + JSON.stringify(adProgress));
                 this.startAd(ad);
                 break;
 
@@ -249,7 +252,6 @@ export class VideoController {
 
             case StreamEvent.Type.AD_PROGRESS:
                 // We are tracking progress via our own video time updates.
-                // const adProgress = streamData.adProgressData;
                 // const timeRemaining = Math.ceil(adProgress.duration - adProgress.currentTime);
                 // console.log('Ad Progress: dur: ' + adProgress.duration + ' remaining: ' + timeRemaining);
                 // this.refresh();
@@ -448,7 +450,7 @@ export class VideoController {
         }
     }
 
-    skipAd(adBreak) {
+    skipAdBreak(adBreak) {
         if (!adBreak) {
             adBreak = this.getAdBreakAt(this.currVideoTime);
         }
@@ -459,8 +461,11 @@ export class VideoController {
 
             this.hideControlBar();
 
+            // The Google DAI SDK does not like seeking over ads, so we instead reset the video.
             // skip a little past the end to avoid a flash of the final ad frame
+            this.stopVideo();
             this.seekTo(adBreak.endTime + 1, this.isControlBarVisible);
+            this.startVideoLater();
         }
     }
 
@@ -471,7 +476,7 @@ export class VideoController {
         if (adBreak.started) return; // ad already processed
         if (adBreak.completed) {
             // Ignore ads already completed.
-            this.skipAd(adBreak);
+            //this.skipAdBreak(adBreak);
             return;
         }
 
@@ -555,7 +560,7 @@ export class VideoController {
             if (adBreak.completed) {
                 if (Math.abs(adBreak.startTime - newTime) <= 1) {
                     // Skip over already completed ads if we run into their start times.
-                    this.skipAd(adBreak);
+                    //this.skipAdBreak(adBreak);
                     return;
                 }
             } else if (!adBreak.started) {
