@@ -577,13 +577,7 @@ export class VideoController {
             this.adMarkersDiv.removeChild(childNodes[i]);
         }
 
-        this.adBreaks = [];
-        let totalAdBreakDuration = 0;
-        cuePoints.forEach((cue, index) => {
-            const adBreak = new AdBreak(cue, index, totalAdBreakDuration);
-            this.adBreaks.push(adBreak);
-            totalAdBreakDuration += adBreak.duration;
-        });
+        this.adBreaks = cuePoints.map((cue, index) => new AdBreak(cue, index));
 
         console.log("ad breaks: " + this.adBreaks.map(adBreak => {
             return timeLabel(this.getPlayingVideoTimeAt(adBreak.startTime, true))
@@ -642,12 +636,15 @@ export class VideoController {
 
     getRawVideoTimeAt(contentVideoTime) {
         let result = contentVideoTime;
+        let previousAdBreakDurations = 0;
         for (var index in this.adBreaks) {
             const adBreak = this.adBreaks[index];
-            if (contentVideoTime < adBreak.contentStartTime) break; // future ads don't affect things
-            if (adBreak.contentStartTime < contentVideoTime) {
+            const adBreakContentStart = adBreak.startTime - previousAdBreakDurations;
+            if (contentVideoTime < adBreakContentStart) break; // future ads don't affect things
+            if (adBreakContentStart < contentVideoTime) {
                 result += adBreak.duration;
             }
+            previousAdBreakDurations += adBreak.duration;
         }
         return result;
     }
