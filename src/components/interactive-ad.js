@@ -148,7 +148,7 @@ export class InteractiveAd {
             if (adFreePod) {
                 // The user has the ad credit, skip over the ad video.
                 adBreak.completed = true;
-                videoController.skipAdBreak(adBreak);
+                videoController.restartAfterAdBreak(adBreak);
             } else {
                 // Just restart video playback at the current fallback ad.
                 videoController.startVideoLater();

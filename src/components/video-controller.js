@@ -217,7 +217,9 @@ export class VideoController {
         const streamData = e.getStreamData();
         const adProgress = streamData.adProgressData;
         const ad = e.getAd();
-        console.log('IMA stream event: ' + e.type);
+        var msg = 'IMA stream event: ' + e.type + ' at: ' + this.timeDebugDisplay(this.currVideoTime);
+        if (ad) msg += ' for ad: ' + ad.getAdId();
+        console.log(msg);
         switch (e.type) {
             case StreamEvent.Type.CUEPOINTS_CHANGED:
                 if (this.adBreaks.length == 0) {
@@ -235,8 +237,7 @@ export class VideoController {
                 break;
 
             case StreamEvent.Type.STARTED:
-                console.log('IMA ad started: ' + JSON.stringify(adProgress));
-                this.startAd(ad);
+                this.startInteractiveAd(ad);
                 break;
 
             case StreamEvent.Type.AD_BREAK_STARTED:
@@ -303,7 +304,7 @@ export class VideoController {
     play() {
         if (!this.video) return;
         if (this.playPromise) return; // don't interrupt current play invocations
-        if (this.debug) console.log(`play from: ${this.timeDebugDisplay(this.currVideoTime)}`);
+        console.log(`play at: ${this.timeDebugDisplay(this.currVideoTime)}`);
         // Work around PS4 hangs by starting playback in a separate thread.
         setTimeout(() => {
             if (!this.video) return; // video has been closed
@@ -319,7 +320,7 @@ export class VideoController {
     pause() {
         if (!this.video) return;
         if (this.playPromise) return; // don't interrupt current play invocations
-        if (this.debug) console.log(`paused at: ${this.timeDebugDisplay(this.currVideoTime)}`);
+        console.log(`paused at: ${this.timeDebugDisplay(this.currVideoTime)}`);
         this.video.pause();
     }
 
@@ -352,44 +353,7 @@ export class VideoController {
         }
         if (!forward) seekStep *= -1;
         const stepFrom = this.seekTarget >= 0 ? this.seekTarget : currTime;
-
-        let newTarget = stepFrom + seekStep;
-
-        // Skip over completed ads, but stop on uncompleted ones to force ad playback.
-        if (currTime < newTarget) {
-            // Seeking forward
-            for (var i in this.adBreaks) {
-                const adBreak = this.adBreaks[i];
-                if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
-                if (adBreak.endTime <= currTime) continue; // ignore past ads
-
-                if (adBreak.completed) {
-                    // Skip over the completed ad.
-                    newTarget += adBreak.duration;
-                } else {
-                    // Play the ad instead of stepping over it.
-                    newTarget = adBreak.startTime;
-                    break;
-                }
-            }
-        } else {
-            // Seeking backwards
-            for (var i = this.adBreaks.length - 1; i >= 0; i--) {
-                const adBreak = this.adBreaks[i];
-                if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
-                if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
-
-                if (adBreak.completed) {
-                    // Skip over the completed ad.
-                    newTarget -= adBreak.duration;
-                } else {
-                    // Play the ad instead of stepping over it.
-                    newTarget = adBreak.startTime;
-                    break;
-                }
-            }
-        }
-
+        const newTarget = stepFrom + seekStep;
         this.seekTo(newTarget);
     }
 
@@ -410,8 +374,47 @@ export class VideoController {
         const firstAdBlock = this.adBreaks[0];
         const minTarget = firstAdBlock && firstAdBlock.startTime <= 0 ? firstAdBlock.duration : 0;
 
-        this.seekTarget = Math.max(minTarget, Math.min(newTarget, maxTarget));
+        newTarget = Math.max(minTarget, Math.min(newTarget, maxTarget));
 
+        // Skip over completed ads, but stop on uncompleted ones to force ad playback.
+        if (currTime < newTarget) {
+            // Seeking forward
+            for (var i in this.adBreaks) {
+                const adBreak = this.adBreaks[i];
+                if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
+                if (adBreak.endTime <= currTime) continue; // ignore past ads
+
+                if (adBreak.completed) {
+                    if (newTarget < adBreak.endTime) {
+                        // We have landed within an ad break on a step, skip over the completed ad break.
+                        newTarget += adBreak.duration;
+                    }
+                } else {
+                    // Play the ad instead of stepping over it.
+                    newTarget = adBreak.startTime;
+                    break;
+                }
+            }
+        } else {
+            // Seeking backwards
+            for (var i = this.adBreaks.length-1; i >= 0; i--) {
+                const adBreak = this.adBreaks[i];
+                if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
+                if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
+
+                if (adBreak.completed) {
+                    if (newTarget < adBreak.endTime) {
+                        // We have landed within an ad break on a step, skip over the completed ad break.
+                        newTarget -= adBreak.duration;
+                    }
+                } else {
+                    // Play the ad instead of stepping over it.
+                    newTarget = adBreak.startTime;
+                    break;
+                }
+            }
+        }
+        this.seekTarget = newTarget;
         console.log(`seek to: ${this.timeDebugDisplay(this.seekTarget)}`);
 
         if (video) {
@@ -451,32 +454,41 @@ export class VideoController {
     }
 
     skipAdBreak(adBreak) {
-        if (!adBreak) {
-            adBreak = this.getAdBreakAt(this.currVideoTime);
-        }
-        if (adBreak) {
-            adBreak.completed = true;
+        if (!adBreak) adBreak = this.getAdBreakAt(this.currVideoTime);
+        if (!adBreak) return;
+        adBreak.completed = true;
 
-            console.log(`ad break ${adBreak.index} skipped to: ${this.timeDebugDisplay(adBreak.endTime)}`);
+        console.log(`ad break ${adBreak.index} skipped to: ${this.timeDebugDisplay(adBreak.endTime)}`);
 
-            this.hideControlBar();
-
-            // The Google DAI SDK does not like seeking over ads, so we instead reset the video.
-            // skip a little past the end to avoid a flash of the final ad frame
-            this.stopVideo();
-            this.seekTo(adBreak.endTime + 1, this.isControlBarVisible);
-            this.startVideoLater();
-        }
+        // skip a little past the end to avoid a flash of the final ad frame
+        this.hideControlBar();
+        this.seekTo(adBreak.endTime + 1);
     }
 
-    startAd(googleAd) {
+    restartAfterAdBreak(adBreak) {
+        if (!adBreak) adBreak = this.getAdBreakAt(this.currVideoTime);
+        if (!adBreak) return;
+        adBreak.completed = true;
+
+        console.log(`ad break ${adBreak.index} restarting from: ${this.timeDebugDisplay(adBreak.endTime)}`);
+
+        this.hideControlBar();
+
+        // The Google DAI SDK does not like seeking over ads, so we instead reset the video.
+        // skip a little past the end to avoid a flash of the final ad frame
+        this.stopVideo();
+        this.seekTo(adBreak.endTime + 1, this.isControlBarVisible);
+        this.startVideoLater();
+    }
+
+    startInteractiveAd(googleAd) {
         const podInfo = googleAd.getAdPodInfo();
         const adBreak = this.adBreaks[podInfo.getPodIndex()];
         if (!adBreak) return;
         if (adBreak.started) return; // ad already processed
         if (adBreak.completed) {
             // Ignore ads already completed.
-            //this.skipAdBreak(adBreak);
+            this.skipAdBreak(adBreak);
             return;
         }
 
@@ -501,7 +513,7 @@ export class VideoController {
         }
 
         adBreak.started = true;
-        console.log(`truex ad started at ${this.timeDebugDisplay(adBreak.startTime)}:\n${vastConfigUrl}`);
+        console.log("truex ad started: " + vastConfigUrl);
 
         // Start an interactive ad.
         this.hideControlBar();
@@ -560,7 +572,7 @@ export class VideoController {
             if (adBreak.completed) {
                 if (Math.abs(adBreak.startTime - newTime) <= 1) {
                     // Skip over already completed ads if we run into their start times.
-                    //this.skipAdBreak(adBreak);
+                    this.skipAdBreak(adBreak);
                     return;
                 }
             } else if (!adBreak.started) {
