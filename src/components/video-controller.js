@@ -487,6 +487,7 @@ export class VideoController {
         // skip a little past the end to avoid a flash of the final ad frame
         this.rawSeekTo(adBreak.endTime + 1);
         this.play();
+        this.showPlayer(true);
     }
 
     resumeAdBreak(adBreak) {
