@@ -656,7 +656,7 @@ export class VideoController {
         for (var index in this.adBreaks) {
             const adBreak = this.adBreaks[index];
             if (rawVideoTime < adBreak.startTime) break; // future ads don't affect things
-            if (adBreak.startTime <= rawVideoTime && rawVideoTime < adBreak.endTime) {
+            if (adBreak.contains(rawVideoTime)) {
                 const fallbackStart = adBreak.fallbackStartTime;
                 if (!skipAds && rawVideoTime >= fallbackStart) {
                     // Show the position within the fallback ads.
