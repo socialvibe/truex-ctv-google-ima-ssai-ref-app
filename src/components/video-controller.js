@@ -58,7 +58,6 @@ export class VideoController {
         this.platform = platform || new TXMPlatform();
 
         this.loadingSpinner = null;
-        this.playPromise = null;
 
         this.onControlBarClick = this.onControlBarClick.bind(this);
         this.controlBarDiv.addEventListener('click', this.onControlBarClick);
@@ -301,20 +300,17 @@ export class VideoController {
     }
 
     isPaused() {
-        if (this.playPromise) return false; // consider the video has not paused if playback is pending
         return !this.video || this.video.paused;
     }
 
     play() {
         const playNow = () => {
             // don't interrupt current play invocations
-            if (!this.video || this.playPromise) return;
+            if (!this.video) return;
             console.log(`play at: ${this.timeDebugDisplay(this.currVideoTime)}`);
-            this.playPromise = this.video.play();
-            if (this.playPromise) {
-                this.playPromise
-                .then(() => this.playPromise = null)
-                .catch(() => this.playPromise = null);
+            const playPromise = this.video.play();
+            if (playPromise) {
+                playPromise.catch(() => console.warn('last play request interrupted'));
             }
         };
         if (this.platform.isPS4) {
@@ -327,7 +323,6 @@ export class VideoController {
 
     pause() {
         if (!this.video) return;
-        if (this.playPromise) return; // don't interrupt current play invocations
         console.log(`paused at: ${this.timeDebugDisplay(this.currVideoTime)}`);
         this.video.pause();
     }
@@ -372,7 +367,6 @@ export class VideoController {
     }
 
     seekTo(newTarget, showControlBar, ignoreAds) {
-        if (this.playPromise) return; // don't interrupt current play invocations
         if (showControlBar === undefined) showControlBar = true; // default to showing the control bar
 
         const currTime = this.currVideoTime;
@@ -403,7 +397,7 @@ export class VideoController {
                 crossingAd = true; // we will have to do the seek work around below
 
                 if (adBreak.completed) {
-                    if (adBreak.start <= newTarget && newTarget < adBreak.endTime) {
+                    if (adBreak.contains(newTarget)) {
                         // We have landed within an ad break on a step, skip over the completed ad break.
                         adAdjustedTarget += adBreak.duration;
                         break;
@@ -424,7 +418,7 @@ export class VideoController {
                 crossingAd = true; // we will have to do the seek work around below
 
                 if (adBreak.completed) {
-                    if (adBreak.start <= newTarget && newTarget < adBreak.endTime) {
+                    if (adBreak.contains(newTarget)) {
                         // We have landed within an ad break on a step, skip over the completed ad break.
                         adAdjustedTarget -= adBreak.duration;
                         break;
@@ -444,14 +438,9 @@ export class VideoController {
             if (this.hlsController && crossingAd) {
                 // The Google SDK with the Hls controller seems to lock up when seek across ad boundaries.
                 // We use this work around for now.
-                const wasPlaying = !this.isPaused();
-                console.log("before detach, wasPlaying: " + wasPlaying);
                 this.hlsController.detachMedia();
-                this.playPromise = null; // ignore old play requests
-                console.log("after detach, isPaused: " + this.isPaused());
                 video.currentTime = newTarget;
-                this.attachVideo(newTarget, wasPlaying);
-                console.log("after attached, isPaused: " + this.isPaused());
+                this.attachVideo(newTarget);
             } else {
                 video.currentTime = newTarget;
             }
@@ -507,7 +496,6 @@ export class VideoController {
         if (!adBreak) return;
         console.log(`ad break ${adBreak.index} resumed from: ${this.timeDebugDisplay(adBreak.fallbackStartTime)}`);
         this.hideControlBar();
-        this.playPromise = null; // ignore obsolete play requests
         this.rawSeekTo(adBreak.fallbackStartTime);
         this.play();
     }

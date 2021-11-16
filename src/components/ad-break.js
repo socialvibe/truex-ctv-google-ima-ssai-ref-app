@@ -28,4 +28,8 @@ export class AdBreak {
     get fallbackDuration() {
         return this.duration - this.placeHolderDuration;
     }
+
+    contains(time) {
+        return this.startTime <= time && time < this.endTime;
+    }
 }
