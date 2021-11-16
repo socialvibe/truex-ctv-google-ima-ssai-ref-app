@@ -265,14 +265,14 @@ export class VideoController {
         }
     }
 
-    attachVideo(atTime) {
+    attachVideo(atTime, andPlay = true) {
         if (!atTime) atTime = this.initialVideoTime;
         console.log('video attached at: ' + this.timeDebugDisplay(atTime));
         this.currVideoTime = atTime; // will be updated as video progresses
         this.hlsController.config.startPosition = atTime;
         this.hlsController.attachMedia(this.video);
         this.ensureDuration();
-        this.play();
+        if (andPlay) this.play();
     }
 
     stopControlBarTimer() {
@@ -306,19 +306,23 @@ export class VideoController {
     }
 
     play() {
-        if (!this.video) return;
-        if (this.playPromise) return; // don't interrupt current play invocations
-        console.log(`play at: ${this.timeDebugDisplay(this.currVideoTime)}`);
-        // Work around PS4 hangs by starting playback in a separate thread.
-        setTimeout(() => {
-            if (!this.video) return; // video has been closed
+        const playNow = () => {
+            // don't interrupt current play invocations
+            if (!this.video || this.playPromise) return;
+            console.log(`play at: ${this.timeDebugDisplay(this.currVideoTime)}`);
             this.playPromise = this.video.play();
             if (this.playPromise) {
                 this.playPromise
-                    .then(() => this.playPromise = null)
-                    .catch(() => this.playPromise = null);
+                .then(() => this.playPromise = null)
+                .catch(() => this.playPromise = null);
             }
-        }, 10);
+        };
+        if (this.platform.isPS4) {
+            // Work around PS4 hangs by starting playback in a separate thread.
+            setTimeout(playNow, 0);
+        } else {
+            playNow();
+        }
     }
 
     pause() {
@@ -440,9 +444,14 @@ export class VideoController {
             if (this.hlsController && crossingAd) {
                 // The Google SDK with the Hls controller seems to lock up when seek across ad boundaries.
                 // We use this work around for now.
+                const wasPlaying = !this.isPaused();
+                console.log("before detach, wasPlaying: " + wasPlaying);
                 this.hlsController.detachMedia();
+                this.playPromise = null; // ignore old play requests
+                console.log("after detach, isPaused: " + this.isPaused());
                 video.currentTime = newTarget;
-                this.attachVideo(newTarget);
+                this.attachVideo(newTarget, wasPlaying);
+                console.log("after attached, isPaused: " + this.isPaused());
             } else {
                 video.currentTime = newTarget;
             }
@@ -498,6 +507,7 @@ export class VideoController {
         if (!adBreak) return;
         console.log(`ad break ${adBreak.index} resumed from: ${this.timeDebugDisplay(adBreak.fallbackStartTime)}`);
         this.hideControlBar();
+        this.playPromise = null; // ignore obsolete play requests
         this.rawSeekTo(adBreak.fallbackStartTime);
         this.play();
     }
