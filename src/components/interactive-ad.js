@@ -142,6 +142,7 @@ export class InteractiveAd {
                 if (adOverlay.parentNode) adOverlay.parentNode.removeChild(adOverlay);
                 adOverlay = null;
             }
+            videoController.showPlayer(true);
         }
 
         function resumePlayback() {
@@ -150,7 +151,7 @@ export class InteractiveAd {
                 adBreak.completed = true;
                 videoController.skipAdBreak(adBreak);
             } else {
-                videoController.resumeAdBreak();
+                videoController.resumeAdBreak(adBreak);
             }
         }
     }

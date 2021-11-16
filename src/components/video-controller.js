@@ -140,26 +140,15 @@ export class VideoController {
         const adUI = document.createElement('div');
         this.streamManager = new StreamManager(video, adUI);
 
-        var streamEvents;
-        if (isFirstStart) {
-            // We need to load the main video url and full ad playlist.
-            streamEvents = [
-                StreamEvent.Type.LOADED,
-                StreamEvent.Type.ERROR,
-                StreamEvent.Type.CUEPOINTS_CHANGED,
-                StreamEvent.Type.STARTED,
-                StreamEvent.Type.AD_BREAK_STARTED,
-                StreamEvent.Type.AD_BREAK_ENDED
-            ];
-        } else {
-            // Restarting, so we only need to know the next ad.
-            streamEvents = [
-                StreamEvent.Type.ERROR,
-                StreamEvent.Type.STARTED,
-                StreamEvent.Type.AD_BREAK_STARTED,
-                StreamEvent.Type.AD_BREAK_ENDED
-            ];
-        }
+        const streamEvents = [
+            StreamEvent.Type.LOADED,
+            StreamEvent.Type.ERROR,
+            StreamEvent.Type.CUEPOINTS_CHANGED,
+            StreamEvent.Type.STARTED,
+            StreamEvent.Type.COMPLETE,
+            StreamEvent.Type.AD_BREAK_STARTED,
+            StreamEvent.Type.AD_BREAK_ENDED
+        ];
         this.streamManager.addEventListener(streamEvents, this.onStreamEvent, false);
 
         const streamRequest = new google.ima.dai.api.VODStreamRequest();
@@ -261,6 +250,14 @@ export class VideoController {
                 break;
             default:
                 break;
+        }
+    }
+
+    showPlayer(visible) {
+        if (visible) {
+            this.videoOwner.classList.add('show');
+        } else {
+            this.videoOwner.classList.remove('show');
         }
     }
 
@@ -500,6 +497,7 @@ export class VideoController {
         this.hideControlBar();
         this.rawSeekTo(adBreak.fallbackStartTime);
         this.play();
+        this.showPlayer(true);
     }
 
     startInteractiveAd(googleAd) {
@@ -518,6 +516,8 @@ export class VideoController {
         // So anything not an interactive ad we just let play.
         const isInteractiveAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
         if (!isInteractiveAd) return;
+
+        this.showPlayer(false);
 
         var vastConfigUrl = googleAd.getDescription();
         vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
