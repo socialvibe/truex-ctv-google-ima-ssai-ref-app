@@ -302,7 +302,6 @@ export class VideoController {
 
     play() {
         const playNow = () => {
-            // don't interrupt current play invocations
             if (!this.video) return;
             console.log(`play at: ${this.timeDebugDisplay(this.currVideoTime)}`);
             const playPromise = this.video.play();
