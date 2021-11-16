@@ -370,7 +370,9 @@ export class VideoController {
         if (showControlBar === undefined) showControlBar = true; // default to showing the control bar
 
         const currTime = this.currVideoTime;
-        if (currTime == newTarget) return; // already at the target
+
+        // not needed, seems better to force the seek in stuck situations
+        //if (currTime == newTarget) return; // already at the target
 
         const video = this.video;
 
