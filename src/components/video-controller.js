@@ -265,19 +265,14 @@ export class VideoController {
         }
     }
 
-    attachVideo(atTime, andPlay) {
+    attachVideo(atTime) {
         if (!atTime) atTime = this.initialVideoTime;
         console.log('video attached at: ' + this.timeDebugDisplay(atTime));
         this.currVideoTime = atTime; // will be updated as video progresses
         this.hlsController.config.startPosition = atTime;
         this.hlsController.attachMedia(this.video);
-
-        if (this.video.duration && !this.videoDuration) {
-            this.videoDuration = this.video.duration;
-        }
-
-        if (andPlay === undefined) andPlay = true;
-        if (andPlay) this.play();
+        this.ensureDuration();
+        this.play();
     }
 
     stopControlBarTimer() {
@@ -391,55 +386,63 @@ export class VideoController {
 
         newTarget = Math.max(minTarget, Math.min(newTarget, maxTarget));
 
-        if (!ignoreAds) {
-            // Skip over completed ads, but stop on uncompleted ones to force ad playback.
-            if (currTime < newTarget) {
-                // Seeking forward
-                for (var i in this.adBreaks) {
-                    const adBreak = this.adBreaks[i];
-                    if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
-                    if (adBreak.endTime <= currTime) continue; // ignore past ads
+        // Skip over completed ads, but stop on uncompleted ones to force ad playback.
+        var adAdjustedTarget = newTarget;
+        var crossingAd = false;
+        if (currTime < newTarget) {
+            // Seeking forward
+            for (var i in this.adBreaks) {
+                const adBreak = this.adBreaks[i];
+                if (newTarget < adBreak.startTime) break; // ignore future ads after the seek target
+                if (adBreak.endTime <= currTime) continue; // ignore past ads
 
-                    if (adBreak.completed) {
-                        if (newTarget < adBreak.endTime) {
-                            // We have landed within an ad break on a step, skip over the completed ad break.
-                            newTarget += adBreak.duration;
-                        }
-                    } else {
-                        // Play the ad instead of stepping over it.
-                        newTarget = adBreak.startTime;
+                crossingAd = true; // we will have to do the seek work around below
+
+                if (adBreak.completed) {
+                    if (adBreak.start <= newTarget && newTarget < adBreak.endTime) {
+                        // We have landed within an ad break on a step, skip over the completed ad break.
+                        adAdjustedTarget += adBreak.duration;
                         break;
                     }
+                } else {
+                    // Play the ad instead of stepping over it.
+                    adAdjustedTarget = adBreak.startTime;
+                    break;
                 }
-            } else {
-                // Seeking backwards
-                for (var i = this.adBreaks.length - 1; i >= 0; i--) {
-                    const adBreak = this.adBreaks[i];
-                    if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
-                    if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
+            }
+        } else {
+            // Seeking backwards
+            for (var i = this.adBreaks.length - 1; i >= 0; i--) {
+                const adBreak = this.adBreaks[i];
+                if (currTime <= adBreak.startTime) continue; // ignore unplayed future ads
+                if (adBreak.endTime < newTarget) break; // ignore ads before the seek target
 
-                    if (adBreak.completed) {
-                        if (newTarget < adBreak.endTime) {
-                            // We have landed within an ad break on a step, skip over the completed ad break.
-                            newTarget -= adBreak.duration;
-                        }
-                    } else {
-                        // Play the ad instead of stepping over it.
-                        newTarget = adBreak.startTime;
+                crossingAd = true; // we will have to do the seek work around below
+
+                if (adBreak.completed) {
+                    if (adBreak.start <= newTarget && newTarget < adBreak.endTime) {
+                        // We have landed within an ad break on a step, skip over the completed ad break.
+                        adAdjustedTarget -= adBreak.duration;
                         break;
                     }
+                } else {
+                    // Play the ad instead of stepping over it.
+                    adAdjustedTarget = adBreak.startTime;
+                    break;
                 }
             }
         }
+        if (!ignoreAds) newTarget = adAdjustedTarget;
         this.seekTarget = newTarget;
         console.log(`seek to: ${this.timeDebugDisplay(this.seekTarget)}`);
 
         if (video) {
-            if (this.hlsController) {
-                // Try not to confused the Hls wrapper.
+            if (this.hlsController && crossingAd) {
+                // The Google SDK with the Hls controller seems to lock up when seek across ad boundaries.
+                // We use this work around for now.
                 this.hlsController.detachMedia();
                 video.currentTime = newTarget;
-                this.attachVideo(newTarget, false);
+                this.attachVideo(newTarget);
             } else {
                 video.currentTime = newTarget;
             }
@@ -488,10 +491,6 @@ export class VideoController {
         // skip a little past the end to avoid a flash of the final ad frame
         this.rawSeekTo(adBreak.endTime + 1);
         this.play();
-        // this.hlsController.detachMedia();
-        // this.initialVideoTime = adBreak.endTime + 1;
-        // // this.rawSeekTo(adBreak.endTime + 1);
-        // this.attachVideo();
     }
 
     resumeAdBreak(adBreak) {
@@ -562,6 +561,9 @@ export class VideoController {
 
     onVideoStarted() {
         if (!this.video) return;
+
+        this.ensureDuration();
+
         if (this.videoStarted) return;
         this.videoStarted = true;
 
@@ -669,6 +671,12 @@ export class VideoController {
             }
         }
         return result;
+    }
+
+    ensureDuration() {
+        if (!this.videoDuration && this.video && this.video.duration > 0) {
+            this.videoDuration = this.video.duration;
+        }
     }
 
     getPlayingVideoDuration() {
