@@ -742,7 +742,7 @@ export class VideoController {
             this.pauseButton.classList.add('show');
         }
 
-        const durationToDisplay = adBreak ? adBreak.duration : this.getPlayingVideoDuration();
+        const durationToDisplay = adBreak ? adBreak.fallbackDuration : this.getPlayingVideoDuration();
 
         function percentage(time) {
             const result = durationToDisplay > 0 ? (time / durationToDisplay) * 100 : 0;
