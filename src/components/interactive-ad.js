@@ -1,9 +1,6 @@
 import uuid from 'uuid';
 import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
 
-// Use a random UUID for the "opt out of tracking" advertising id that is stable for all ads in an app session.
-const optOutAdvertisingId = uuid.v4();
-
 // Exercises the True[X] Ad Renderer for interactive ads.
 export class InteractiveAd {
     constructor(vastConfigUrl, adBreak, videoController) {
@@ -18,14 +15,10 @@ export class InteractiveAd {
 
             videoController.showLoadingSpinner(true);
 
-            const nativeAdvertisingId = await getNativePlatformAdvertisingId();
-
             try {
                 videoController.pause();
 
                 const options = {
-                    userAdvertisingId: nativeAdvertisingId, // i.e. override from native side query if present
-                    fallbackAdvertisingId: optOutAdvertisingId, // random fallback to use if no user ad id is available
                     supportsUserCancelStream: true // i.e. user backing out of an ad will cancel the entire video
                 };
 
@@ -87,43 +80,6 @@ export class InteractiveAd {
                     resumePlayback();
                     break;
             }
-        }
-
-        async function getNativePlatformAdvertisingId() {
-            if (window.webApp && window.fireTvApp) {
-                return new Promise(function(resolve, reject) {
-                    window.webApp.onAdvertisingIdReady = function(advertisingId) {
-                        // consume the callback
-                        window.webApp.onAdvertisingIdReady = null;
-                        resolve(advertisingId);
-                    }
-
-                    window.fireTvApp.getAdvertisingId && window.fireTvApp.getAdvertisingId();
-                });
-            }
-
-            var advertisingId = undefined;
-
-            if (platform.isTizen) {
-                const webapis = window.webapis;
-                const adinfo = webapis && webapis.adinfo;
-                if (adinfo) {
-                    try {
-                        if (adinfo.isLATEnabled()) {
-                            console.log('tizen ad id ignored due to Limited Ad Tracking');
-                        } else {
-                            advertisingId = adinfo.getTIFA();
-                            console.log('tizen ad id: ' + advertisingId);
-                        }
-                    } catch (err) {
-                        console.warn('tizen ad id error: ' + platform.describeError(err));
-                    }
-                } else {
-                    console.warn('tizen ad id: webapis not present');
-                }
-            }
-
-            return Promise.resolve(advertisingId);
         }
 
         function handleAdError(errOrMsg) {
