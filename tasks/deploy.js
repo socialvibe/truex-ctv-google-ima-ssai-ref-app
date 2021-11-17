@@ -26,21 +26,21 @@ const deploy = () => {
     // Otherwise, sibling folders with the same prefix are also deleted.
     // This is due to S3 folders being just a prefix naming convention using / as a separator.
     return s3.cleanFolder(bucket, prefix + '/')
-    .then(() => {
-        return uploadDist(bucket, prefix);
-    })
-    .then(() => {
-        console.log("invalidating cloudfront cache");
-        const pathsToInvalidate = [`/${prefix}/index.html`];
-        return awsCloudFrontInvalidate(cloudFrontDistId, pathsToInvalidate);
-    })
-    .then(() => {
-        console.log("deploy complete");
-    })
-    .catch((err) => {
-        console.error(`deploy error: ${err}`);
-        process.exit(1);
-    });
+        .then(() => {
+            return uploadDist(bucket, prefix);
+        })
+        .then(() => {
+            console.log("invalidating cloudfront cache");
+            const pathsToInvalidate = [`/${prefix}/index.html`];
+            return awsCloudFrontInvalidate(cloudFrontDistId, pathsToInvalidate);
+        })
+        .then(() => {
+            console.log("deploy complete");
+        })
+        .catch((err) => {
+            console.error(`deploy error: ${err}`);
+            process.exit(1);
+        });
 };
 
 deploy();
