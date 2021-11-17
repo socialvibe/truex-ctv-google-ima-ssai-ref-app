@@ -162,6 +162,8 @@ import { VideoController } from "./components/video-controller";
                 return;
             }
 
+            console.log('input action: ' + action);
+
             if (action == inputActions.select || action == inputActions.playPause) {
                 videoController.togglePlayPause();
                 return true; // handled

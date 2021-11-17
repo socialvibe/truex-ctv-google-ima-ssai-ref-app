@@ -259,8 +259,10 @@ export class VideoController {
 
     showPlayer(visible) {
         if (visible) {
+            console.log("showing player");
             this.videoOwner.classList.add('show');
         } else {
+            console.log("hiding player");
             this.videoOwner.classList.remove('show');
         }
     }
