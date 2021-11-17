@@ -69,6 +69,10 @@ export class VideoController {
         this.closeVideoAction = function() {}; // override as needed
     }
 
+    controlsEnabled() {
+        return this.videoStarted && this.videoOwner.classList.contains('show');
+    }
+
     showControlBar(forceTimer) {
         this.controlBarDiv.classList.add('show');
         this.isControlBarVisible = true;

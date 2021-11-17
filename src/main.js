@@ -157,6 +157,11 @@ import { VideoController } from "./components/video-controller";
 
         // The entire page is the focus.
         setFocus(pageDiv, null, action => {
+            if (!videoController.controlsEnabled()) {
+                // Do nothing until user controls are enabled.
+                return;
+            }
+
             if (action == inputActions.select || action == inputActions.playPause) {
                 videoController.togglePlayPause();
                 return true; // handled
