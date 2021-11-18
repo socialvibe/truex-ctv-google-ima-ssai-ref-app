@@ -7,7 +7,7 @@ branches:
     - develop
     - master
     - /^release/
-    - test
+    - /^test/
 install:
   - npm install
 before_script:

@@ -24,6 +24,8 @@
     display: block;
   }
 
+  cursor: pointer;
+
   .play-button, .pause-button {
     vertical-align: middle;
     width: $playW;

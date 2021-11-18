@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## v1.5.0
+* Ensure "2" key skips fallback ad videos
+
 ## v1.4.0
 * Use latest TAR to support release/1-4-0
 
