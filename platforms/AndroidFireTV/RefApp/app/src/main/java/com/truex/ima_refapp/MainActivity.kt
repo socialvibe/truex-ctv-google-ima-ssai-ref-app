@@ -2,17 +2,18 @@ package com.truex.ima_refapp
 
 import android.annotation.SuppressLint
 import android.app.Activity
+import android.graphics.Bitmap
 import android.os.AsyncTask
 import android.os.Build
 import android.os.Bundle
+import android.os.Handler
 import android.provider.Settings.Secure
 import android.view.KeyEvent
 import android.view.View
+import android.view.ViewGroup
 import android.view.Window
 import android.view.WindowManager.LayoutParams
-import android.webkit.JavascriptInterface
-import android.webkit.WebSettings
-import android.webkit.WebView
+import android.webkit.*
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 
 class MainActivity : Activity() {
@@ -55,8 +56,38 @@ class MainActivity : Activity() {
         webSettings.setAppCacheEnabled(false)
         webSettings.cacheMode = WebSettings.LOAD_NO_CACHE
 
+        webView.webViewClient = object : WebViewClient() {
+            override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                return false
+            }
+
+            override fun onReceivedError(view: WebView?, request: WebResourceRequest?, error: WebResourceError?) {
+                super.onReceivedError(view, request, error)
+                hideSplashScreen()
+            }
+
+            override fun onPageStarted(view: WebView?, url: String?, favicon: Bitmap?) {
+                super.onPageStarted(view, url, favicon)
+                // Ensure the splash screen gets removed eventually, e.g. if the webview fails to load.
+                Handler().postDelayed(Runnable {
+                    hideSplashScreen()
+                }, 3000)
+            }
+        }
+
         val appUrl = getString(R.string.app_url);
         webView.loadUrl(appUrl)
+    }
+
+    @JavascriptInterface
+    fun hideSplashScreen() {
+        runOnUiThread {
+            var mainLayout: ViewGroup = findViewById(R.id.mainLayout)
+            var splashScreen: View? = findViewById(R.id.appSplash)
+            if (splashScreen != null && splashScreen.parent != null) {
+                mainLayout.removeView(splashScreen)
+            }
+        }
     }
 
     @JavascriptInterface
