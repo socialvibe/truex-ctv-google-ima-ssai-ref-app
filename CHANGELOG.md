@@ -1,6 +1,9 @@
 # Changelog
 All notable changes to this project will be documented in this file.
 
+## v1.5.1
+* Ensure splash screen is always used
+
 ## v1.5.0
 * Ensure "2" key skips fallback ad videos
 * Use latest TAR to support release/1-5-0
