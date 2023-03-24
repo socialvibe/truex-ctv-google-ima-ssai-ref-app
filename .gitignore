@@ -11,6 +11,7 @@ html_exports/
 /src/config.js
 
 /.sass-cache/
+/installers/
 
 # IntelliJ project files
 /.idea/
