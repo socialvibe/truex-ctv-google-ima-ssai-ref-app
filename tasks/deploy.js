@@ -4,22 +4,22 @@ require('truex-shared/src/deploy/promisify').polyfill();
 
 const s3 = require('truex-shared/src/deploy/s3-upload');
 const uploadDist = require('truex-shared/src/deploy/upload-dist');
-const awsCloudFrontInvalidate = require("invalidate-cloudfront-edge-cache");
+const { purgeFastlyService }  = require("truex-shared/src/deploy/purge-fastly-service");
 
 const deploy = () => {
     const bucket = "ctv.truex.com";
-    const branch = process.env.TRAVIS_BRANCH;
+    // const branch = process.env.TRAVIS_BRANCH;
+    const branch = 'test';
     const prefix = 'web/ref-app-google-IMA/' + branch;
 
     const PR = process.env.TRAVIS_PULL_REQUEST;
     const isPR = PR != "false";
-    const cloudFrontDistId = process.env.TRUEX_CLOUDFRONT_DISTRIBUTION_ID;
 
-    if (isPR) {
-        // We only want to deploy on the final merges.
-        console.log(`PR deploy skipped for ${bucket}/${prefix}`);
-        process.exit(0);
-    }
+    // if (isPR) {
+    //     // We only want to deploy on the final merges.
+    //     console.log(`PR deploy skipped for ${bucket}/${prefix}`);
+    //     process.exit(0);
+    // }
 
     console.log(`deploying to ${bucket}/${prefix}`);
     // Note: ensure trailing / so that only the branch folder is deleted.
@@ -30,9 +30,9 @@ const deploy = () => {
             return uploadDist(bucket, prefix);
         })
         .then(() => {
-            console.log("invalidating cloudfront cache");
-            const pathsToInvalidate = [`/${prefix}/index.html`];
-            return awsCloudFrontInvalidate(cloudFrontDistId, pathsToInvalidate);
+            // Purge the entire Fastly CDN service for robustness, it is ok performance-wise.
+            // Fastly otherwise makes it difficult to purge related urls, e.g. .../someFile.js vs .../someFile.js?cb=460
+            return purgeFastlyService(bucket, process.env.FASTLY_API_TOKEN);
         })
         .then(() => {
             console.log("deploy complete");
