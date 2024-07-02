@@ -4,7 +4,7 @@ import { inputActions } from 'truex-shared/focus_manager/txm_input_actions';
 import { Focusable } from 'truex-shared/focus_manager/txm_focusable';
 import { TXMFocusManager } from 'truex-shared/focus_manager/txm_focus_manager';
 import { ScriptLoader } from "truex-shared/utils/loaders";
-import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
+import { TruexAdRenderer } from '@truex/ad-renderer';
 import { LoadingSpinner } from "./components/loading-spinner";
 import { VideoController } from "./components/video-controller";
 import homeBackgroundPath from "./assets/home-page-background.png";

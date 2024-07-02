@@ -1,5 +1,5 @@
 import uuid from 'uuid';
-import { TruexAdRenderer } from '@truex/ctv-ad-renderer';
+import { TruexAdRenderer } from '@truex/ad-renderer';
 
 // Exercises the True[X] Ad Renderer for interactive ads.
 export class InteractiveAd {
