@@ -156,7 +156,6 @@ export class VideoController {
         this.streamManager.addEventListener(streamEvents, this.onStreamEvent, false);
 
         const streamRequest = new google.ima.dai.api.VODStreamRequest();
-        streamRequest.assetKey
         streamRequest.contentSourceId = videoStream.google_content_id;
         streamRequest.videoId = videoStream.google_video_id;
         streamRequest.apiKey = null; // unused since stream is not encrypted
