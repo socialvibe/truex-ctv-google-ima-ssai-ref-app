@@ -501,7 +501,11 @@ export class VideoController {
         if (!adBreak) return;
         console.log(`ad break ${adBreak.index} resumed from: ${this.timeDebugDisplay(adBreak.fallbackStartTime)}`);
         this.hideControlBar();
-        this.rawSeekTo(adBreak.fallbackStartTime);
+        // We need to nudge the fallback time by a tiny amount
+        // to ensure that the stream manager will fire a
+        // StreamEvent.Type.STARTED event for the next ad.
+        // Otherwise we are not goint be notified when it starts.
+        this.rawSeekTo(adBreak.adBreakProgress-0.001);
         this.play();
         this.showPlayer(true);
     }
@@ -510,7 +514,9 @@ export class VideoController {
         const podInfo = googleAd.getAdPodInfo();
         const adBreak = this.adBreaks[podInfo.getPodIndex()];
         if (!adBreak) return;
-        if (adBreak.started) return; // ad already processed
+
+        adBreak.adBreakProgress += googleAd.getDuration();
+
         if (adBreak.completed) {
             // Ignore ads already completed.
             this.skipAdBreak(adBreak);
@@ -520,8 +526,11 @@ export class VideoController {
         // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
         // everything else are the fallback ad videos, or else non-truex ad videos.
         // So anything not an interactive ad we just let play.
-        const isInteractiveAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
-        if (!isInteractiveAd) return;
+        const isTruexAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
+        const isIDVxAd = googleAd.getAdSystem() == 'trueX' && googleAd.getTitle().startsWith('IDVx Ad');
+        if (!isTruexAd && !isIDVxAd) return;
+
+        if (isTruexAd && adBreak.started) return; // ad already processed
 
         this.showPlayer(false);
 
@@ -540,7 +549,7 @@ export class VideoController {
         }
 
         adBreak.started = true;
-        console.log("truex ad started: " + vastConfigUrl);
+        console.log("truex or idvx ad started: " + vastConfigUrl);
 
         // Start an interactive ad.
         this.hideControlBar();
