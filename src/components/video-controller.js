@@ -505,7 +505,7 @@ export class VideoController {
         // to ensure that the stream manager will fire a
         // StreamEvent.Type.STARTED event for the next ad.
         // Otherwise we are not goint be notified when it starts.
-        this.rawSeekTo(adBreak.adBreakProgress-0.001);
+        this.rawSeekTo(adBreak.lastAdEndTime-0.001);
         this.play();
         this.showPlayer(true);
     }
@@ -515,7 +515,7 @@ export class VideoController {
         const adBreak = this.adBreaks[podInfo.getPodIndex()];
         if (!adBreak) return;
 
-        adBreak.adBreakProgress += googleAd.getDuration();
+        adBreak.lastAdEndTime += googleAd.getDuration();
 
         if (adBreak.completed) {
             // Ignore ads already completed.

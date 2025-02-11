@@ -12,7 +12,7 @@ export class AdBreak {
         this.endTime = cuePoint.end;
         this.started = false;
         this.completed = false;
-        this.adBreakProgress = 0;
+        this.lastAdEndTime = 0;
 
         // The length of the truex placeholder video.
         this.placeHolderDuration = 0;
