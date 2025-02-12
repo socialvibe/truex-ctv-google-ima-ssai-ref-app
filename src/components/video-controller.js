@@ -527,7 +527,7 @@ export class VideoController {
         // everything else are the fallback ad videos, or else non-truex ad videos.
         // So anything not an interactive ad we just let play.
         const isTruexAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
-        const isIDVxAd = googleAd.getAdSystem() == 'trueX' && googleAd.getTitle().startsWith('IDVx Ad');
+        const isIDVxAd = googleAd.getAdSystem() == 'IDVx';
         if (!isTruexAd && !isIDVxAd) return;
 
         if (isTruexAd && adBreak.started) return; // ad already processed
