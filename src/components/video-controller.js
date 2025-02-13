@@ -523,9 +523,24 @@ export class VideoController {
             return;
         }
 
-        // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
-        // everything else are the fallback ad videos, or else non-truex ad videos.
-        // So anything not an interactive ad we just let play.
+        /**
+         * Infillion Ad Types and Behavior
+         * 
+         * 1. true[X]
+         *    - Always appears in position 1 of the ad pod
+         *    - Identified by ad system name 'trueX'
+         *    - Presents an interactive choice card to viewers
+         *    - If viewer engages: Skips remaining ads in pod
+         *    - If viewer declines: Plays fallback ads uninterrupted
+         *    - Note: Fallback sequence may include IDVx ads
+         * 
+         * 2. IDVx
+         *    - Can appear in any position within the ad pod
+         *    - Identified by ad system name 'IDVx'
+         *    - Plays automatically without viewer interaction
+         *    - Seamlessly integrates with third-party ads
+         *    - Forms part of continuous ad sequence
+         */
         const isTruexAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
         const isIDVxAd = googleAd.getAdSystem() == 'IDVx';
         if (!isTruexAd && !isIDVxAd) return;
