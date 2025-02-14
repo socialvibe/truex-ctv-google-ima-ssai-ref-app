@@ -1,18 +1,34 @@
 # Overview
 
-For an initial introduction on how to integrate the true[X] SDK into a web application, please refer to the [Getting Started](./GETTING_STARTED.md) guide.
+For an initial introduction on how to integrate the Infillion SDK into a web application, please refer to the [Getting Started](./GETTING_STARTED.md) guide.
 
-This project contains sample source code that demonstrates an example integration of true[X]'s CTV Web ad renderer with the Google Ad Manager, using the IMA SDK (Server Side). This further exemplifies the needed logic to manage true[X] opt-in flows (choice cards) as fully stitched into the video stream, when true[X] ads are encountered in the ad feed.
+This project contains sample source code that demonstrates an example integration of Infillion's CTV Web ad renderer with the Google Ad Manager, using the IMA SDK (Server Side). This further exemplifies the needed logic to manage true[X] opt-in flows (choice cards) and IDVx ad playback as fully stitched into the video stream, when these ads are encountered in the ad feed.
 
 Google IMA Documentation can be found [here](https://developers.google.com/interactive-media-ads).
 
 Client Side example can be found [here](https://github.com/socialvibe/truex-ctv-google-ima-csai-ref-app).
 
-For a more detailed true[X] integration guide, please refer to the [CTV Web Integration documentation](https://github.com/socialvibe/truex-ctv-web-integration) on github.com.
+For a more detailed Infillion integration guide, please refer to the [CTV Web Integration documentation](https://github.com/socialvibe/truex-ctv-web-integration) on github.com.
+
+# Infillion Ad Types and Behavior
+  1. true[X]
+    - Always appears in position 1 of the ad pod
+    - Identified by ad system name 'trueX'
+    - Presents an interactive choice card to viewers
+    - If viewer engages: Skips remaining ads in pod
+    - If viewer declines: Plays fallback ads uninterrupted
+    - Note: Fallback sequence may include IDVx ads
+
+  2. IDVx
+    - Can appear in any position within the ad pod
+    - Identified by ad system name 'IDVx'
+    - Plays automatically without viewer interaction
+    - Seamlessly integrates with third-party ads
+    - Forms part of continuous ad sequence
 
 # Implementation Details
 
-In this project we exercise the integration with the Google Ad server via the IMA SDK. This is meant to capture the stream's ad pods, including their duration and the reference to the true[X] payloads in each pod. 
+In this project we exercise the integration with the Google Ad server via the IMA SDK. This is meant to capture the stream's ad pods, including their duration and the reference to the true[X] and IDVx payloads in each pod.
 TODO: flesh this out a bit more, need to point on the example ads and the main video url.
 
 In this sample application, two ad breaks are defined, `preroll` and `midroll-1`. Key fields are:
@@ -22,7 +38,9 @@ In this sample application, two ad breaks are defined, `preroll` and `midroll-1`
 
 In order to start playing a video, video stream objects are given to the `startVideo` method of the app's `VideoController` instance (from `video-controller.js`). In the `setAdPlaylist` method, the vmap array is used to create an array of `AdBreak` instances, stored in the video controller's `adPlaylist` field.
 
-When video playback encounters the ad break's start time offset in `onVideoTimeUpdate`, a new `InteractiveAd` instance (from `interactive-ad.js`) is created with the ad break description. Upon calling the interactive ad's `start` method, a `TruexAdRenderer` instance (i.e. `tar`) is created to render and overlay the choice card and ultimately the engagement ad over top of the playback page. If the user skips the interaction, the ad fallback video is played instead, or else the main video is cancelled entirely if the user backs out of the ad completely.
+For true[x], when video playback encounters the ad break's start time offset in `onVideoTimeUpdate`, a new `InteractiveAd` instance (from `interactive-ad.js`) is created with the ad break description. Upon calling the interactive ad's `start` method, a `TruexAdRenderer` instance (i.e. `tar`) is created to render and overlay the choice card and ultimately the engagement ad over top of the playback page. If the user skips the interaction, the player will seek to the end of the true[x] placeholder and continue with the rest of the stream. However, if the user choses to engage and they complete the value exchange, we'll skip over to the end of the pod and resume the main content.
+
+An IDVx ad will follow a similar path but no choice card will be shown. Once the IDVx ad is over, the `TruexAdRenderer` UI will disappear, and we'll seek to the end of the  IDVx placeholder to continue with the rest of the stream.
 
 The `tar` integration flow is described in the `start` method, with the key responsibilities for the host application developer being showing the the `handleAdEvent` method, which fields ad events to track the state of ad changes, until the ad is ultimately completed or cancelled, tracking in particular whether the viewer interacted enough with the ad to earn a free pod skip to continue with the main video, or else fallback to playing the ad videos instead.
 
