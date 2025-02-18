@@ -44,6 +44,13 @@ An IDVx ad will follow a similar path but no choice card will be shown. Once the
 
 The `tar` integration flow is described in the `start` method, with the key responsibilities for the host application developer being showing the the `handleAdEvent` method, which fields ad events to track the state of ad changes, until the ad is ultimately completed or cancelled, tracking in particular whether the viewer interacted enough with the ad to earn a free pod skip to continue with the main video, or else fallback to playing the ad videos instead.
 
+# VAST Config Loading
+GAM (Google Ad Manager) retrieves VAST data from the following dedicated S3 endpoints:
+https://s3.us-east-1.amazonaws.com/stash.truex.com/sample-tags/dfp-dai/firetv-vmap/vast-preroll.xml
+https://s3.us-east-1.amazonaws.com/stash.truex.com/sample-tags/dfp-dai/firetv-vmap/vast-midroll.xml
+
+These endpoints serve as the source of truth for the VAST configuration. Any changes you make to those S3 files will be evenually picked up and reflected in GAM.
+
 # Build/Develop/Deploy
 
 To begin development, run the standard `npm install` to download the project's dependencies.
