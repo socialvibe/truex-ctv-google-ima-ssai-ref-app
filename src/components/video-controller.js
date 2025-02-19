@@ -501,7 +501,11 @@ export class VideoController {
         if (!adBreak) return;
         console.log(`ad break ${adBreak.index} resumed from: ${this.timeDebugDisplay(adBreak.fallbackStartTime)}`);
         this.hideControlBar();
-        this.rawSeekTo(adBreak.fallbackStartTime);
+        // We need to nudge the fallback time by a tiny amount
+        // to ensure that the stream manager will fire a
+        // StreamEvent.Type.STARTED event for the next ad.
+        // Otherwise we are not goint be notified when it starts.
+        this.rawSeekTo(adBreak.lastAdEndTime-0.001);
         this.play();
         this.showPlayer(true);
     }
@@ -510,18 +514,37 @@ export class VideoController {
         const podInfo = googleAd.getAdPodInfo();
         const adBreak = this.adBreaks[podInfo.getPodIndex()];
         if (!adBreak) return;
-        if (adBreak.started) return; // ad already processed
+
+        adBreak.lastAdEndTime += googleAd.getDuration();
+
         if (adBreak.completed) {
             // Ignore ads already completed.
             this.skipAdBreak(adBreak);
             return;
         }
 
-        // For true[X] IMA integration, the first ad in an ad break points to the interactive ad,
-        // everything else are the fallback ad videos, or else non-truex ad videos.
-        // So anything not an interactive ad we just let play.
-        const isInteractiveAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
-        if (!isInteractiveAd) return;
+        // Infillion Ad Types and Behavior
+        // 
+        // 1. true[X]
+        //   - Always appears in position 1 of the ad pod
+        //   - Identified by ad system name 'trueX'
+        //   - Presents an interactive choice card to viewers
+        //   - If viewer engages: Skips remaining ads in pod
+        //   - If viewer declines: Plays fallback ads uninterrupted
+        //   - Note: Fallback sequence may include IDVx ads
+        // 
+        // 2. IDVx
+        //   - Can appear in any position within the ad pod
+        //    - Identified by ad system name 'IDVx'
+        //    - Plays automatically without viewer interaction
+        //    - Seamlessly integrates with third-party ads
+        //    - Forms part of continuous ad sequence
+        // 
+        const isTruexAd = googleAd.getAdSystem() == 'trueX' && podInfo.getAdPosition() == 1;
+        const isIDVxAd = googleAd.getAdSystem() == 'IDVx';
+        if (!isTruexAd && !isIDVxAd) return;
+
+        if (isTruexAd && adBreak.started) return; // ad already processed
 
         this.showPlayer(false);
 
@@ -540,7 +563,7 @@ export class VideoController {
         }
 
         adBreak.started = true;
-        console.log("truex ad started: " + vastConfigUrl);
+        console.log("truex or idvx ad started: " + vastConfigUrl);
 
         // Start an interactive ad.
         this.hideControlBar();
