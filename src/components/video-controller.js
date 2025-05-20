@@ -550,20 +550,25 @@ export class VideoController {
 
         var vastConfigUrl = googleAd.getDescription();
         vastConfigUrl = vastConfigUrl && vastConfigUrl.trim();
-        // for testing against the latest QA
-        // vastConfigUrl = "https://qa-get.truex.com/22105de992284775a56f28ca6dac16c667e73cd0/vast/config?dimension_1=sample-video&dimension_2=0&dimension_3=sample-video&dimension_4=1234&dimension_5=evergreen&stream_position=preroll&stream_id=1234";
-        if (!vastConfigUrl) return;
-        if (!vastConfigUrl.startsWith('http')) {
-            vastConfigUrl = 'https://' + vastConfigUrl;
-        }
-        if (this.platform.isTizen || this.platform.isLG) {
-            // Work around user agent filtering for now until these platforms
-            // are enabled on the back end.
-            vastConfigUrl = vastConfigUrl.replace(/\&?user_agent=[^&]*/, '') + '&user_agent=';
+        if (vastConfigUrl) {
+            if (!vastConfigUrl.startsWith('http')) {
+                vastConfigUrl = 'https://' + vastConfigUrl;
+            }
+
+            if (this.platform.isTizen || this.platform.isLG) {
+                // Work around user agent filtering for now until these platforms
+                // are enabled on the back end.
+                vastConfigUrl = vastConfigUrl.replace(/\&?user_agent=[^&]*/, '') + '&user_agent=';
+            }
         }
 
+        const rawParameters = (googleAd.getTraffickingParametersString() || '').trim();
+        const vastConfigJson = rawParameters ? JSON.parse(rawParameters) : null;
+        
+        if (!vastConfigUrl && !vastConfigJson) return;
+
         adBreak.started = true;
-        console.log("truex or idvx ad started: " + vastConfigUrl);
+        console.log("truex or idvx ad started");
 
         // Start an interactive ad.
         this.hideControlBar();
@@ -578,7 +583,8 @@ export class VideoController {
         // We just need to skip over the placeholder video of this interactive ad wrapper.
         adBreak.placeHolderDuration = googleAd.getDuration();
 
-        const ad = new InteractiveAd(vastConfigUrl, adBreak, this);
+        // Truex flow uses vast config url, iDVx flow uses vastConfigJson
+        const ad = new InteractiveAd(vastConfigJson || vastConfigUrl, adBreak, this);
         if (this.platform.isPS4) {
             setTimeout(() => ad.start(), 1); // show the ad "later" to work around hangs/crashes on the PS4
         } else {
